@@ -9,6 +9,7 @@ import { EvidenceAccordion, ScoreBars, TypeHero } from "@/components/result/Resu
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { composeAnalysisPhoto, type AnalysisPhoto } from "@/lib/export/analysisImage";
 import { pngToPdf, renderResultPng } from "@/lib/export/resultImage";
 import { downloadBlob } from "@/lib/image/image";
 import { saveResult, toSavedResult } from "@/lib/store/saved";
@@ -27,6 +28,8 @@ export function ResultView() {
   const [saved, setSaved] = useState<string | null>(null);
   const [busy, setBusy] = useState<"png" | "pdf" | "share" | null>(null);
   const [msg, setMsg] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
+  // 분석 사진 포함은 매번 사용자가 직접 선택 (기본 꺼짐)
+  const [includePhotos, setIncludePhotos] = useState(false);
 
   if (!hydrated) return <div className="mx-auto mt-10 h-96 w-full max-w-6xl animate-pulse rounded-3xl bg-surface" />;
 
@@ -48,12 +51,29 @@ export function ResultView() {
   const front = session.analyses.front;
   const side = session.analyses.side;
   const dateText = formatDate(session.resultAt);
+  const photoSources = (["front", "side"] as const).filter(
+    (v) => session.analyses[v]?.status === "ok" && session.analyses[v]?.landmarks && session.captures[v],
+  );
+  const withPhotos = includePhotos && photoSources.length > 0;
+  const fileBase = withPhotos ? "framefit-result-photo" : "framefit-result";
+
+  /** 결과 카드 PNG. 사진 포함을 선택한 경우에만 분석 사진 합성본을 넣음 */
+  async function buildCard(): Promise<Blob> {
+    let photos: AnalysisPhoto[] = [];
+    if (withPhotos) {
+      const composed = await Promise.all(
+        photoSources.map((v) => composeAnalysisPhoto(session.captures[v]!.dataUrl, session.analyses[v]!, v === "front" ? "정면" : "측면")),
+      );
+      photos = composed.filter((p): p is AnalysisPhoto => p !== null);
+    }
+    return renderResultPng(result!, dateText, { photos });
+  }
 
   async function exportPng() {
     setBusy("png");
     setMsg(null);
     try {
-      downloadBlob(await renderResultPng(result!, dateText), "framefit-result.png");
+      downloadBlob(await buildCard(), `${fileBase}.png`);
     } catch {
       setMsg({ tone: "error", text: "이미지를 만들지 못했어요. 다른 브라우저로 시도해 주세요." });
     } finally {
@@ -64,7 +84,7 @@ export function ResultView() {
     setBusy("pdf");
     setMsg(null);
     try {
-      downloadBlob(await pngToPdf(await renderResultPng(result!, dateText)), "framefit-result.pdf");
+      downloadBlob(await pngToPdf(await buildCard()), `${fileBase}.pdf`);
     } catch {
       setMsg({ tone: "error", text: "PDF를 만들지 못했어요. PNG 저장을 이용해 주세요." });
     } finally {
@@ -75,12 +95,12 @@ export function ResultView() {
     setBusy("share");
     setMsg(null);
     try {
-      const png = await renderResultPng(result!, dateText);
-      const file = new File([png], "framefit-result.png", { type: "image/png" });
+      const png = await buildCard();
+      const file = new File([png], `${fileBase}.png`, { type: "image/png" });
       if (navigator.canShare?.({ files: [file] })) {
         await navigator.share({ files: [file], title: "FRAME FIT 결과", text: "골격 유형 경향 (참고용)" });
       } else {
-        downloadBlob(png, "framefit-result.png");
+        downloadBlob(png, `${fileBase}.png`);
         setMsg({ tone: "ok", text: "이 브라우저는 파일 공유를 지원하지 않아 이미지로 저장했어요." });
       }
     } catch (e) {
@@ -164,6 +184,22 @@ export function ResultView() {
             <Button className="w-full rounded-full" disabled={!consent || !!saved} onClick={save}>
               <Save className="size-4" aria-hidden /> {saved ? "저장됨" : "결과 요약 저장"}
             </Button>
+            {photoSources.length > 0 && (
+              <Label className="items-start gap-3 border-t border-black/5 pt-4 font-normal leading-relaxed">
+                <Checkbox checked={includePhotos} onCheckedChange={(v) => setIncludePhotos(!!v)} className="mt-0.5" />
+                <span className="text-sm">
+                  분석 사진 포함
+                  <span className="block text-xs text-neutral-500">
+                    {photoSources.length === 2 ? "정면·측면" : photoSources[0] === "front" ? "정면" : "측면"} 사진에 관절점·측정선·윤곽을 겹쳐 넣어요.
+                  </span>
+                </span>
+              </Label>
+            )}
+            {withPhotos && (
+              <Notice tone="warn">
+                신체 사진이 파일에 포함돼요. 다른 사람에게 보내거나 올리기 전에 꼭 확인해 주세요. 사진은 이 기기 안에서만 합성되며 어디로도 전송되지 않아요.
+              </Notice>
+            )}
             <div className="grid grid-cols-3 gap-2">
               <Button variant="outline" className="rounded-full" onClick={exportPng} disabled={!!busy}>
                 <Download className="size-4" aria-hidden /> PNG
@@ -175,7 +211,7 @@ export function ResultView() {
                 <Share2 className="size-4" aria-hidden /> 공유
               </Button>
             </div>
-            <p className="text-xs text-neutral-500">내보내는 이미지에는 사진이 포함되지 않아요.</p>
+            {!withPhotos && <p className="text-xs text-neutral-500">내보내는 이미지에는 사진이 포함되지 않아요.</p>}
             {msg && <Notice tone={msg.tone === "ok" ? "ok" : "error"}>{msg.text}</Notice>}
           </section>
         </aside>

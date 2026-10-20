@@ -2,14 +2,25 @@ import { CLASSIFICATION_LABEL, STRENGTH_LABEL, TYPE_META } from "../brand/typeMe
 import { describeMixed } from "../classifier/engine";
 import type { ClassificationResult } from "../classifier/types";
 import { BODY_TYPES } from "../classifier/types";
+import { dataUrlToImage } from "../image/image";
+import type { AnalysisPhoto } from "./analysisImage";
+
+/** 분석 사진 섹션 높이 (사진을 포함할 때만 카드가 이만큼 길어짐) */
+const PHOTO_SECTION_H = 820;
 
 /**
  * 결과 요약 카드를 캔버스로 그려 PNG Blob 생성.
- * 사진·좌표는 포함하지 않습니다 (공유 시 개인정보 노출 방지).
+ * 기본은 사진·좌표 없이 만들고, 사용자가 선택한 경우에만 분석 사진(오버레이 합성본)을 넣습니다.
  */
-export async function renderResultPng(result: ClassificationResult, dateText: string): Promise<Blob> {
+export async function renderResultPng(
+  result: ClassificationResult,
+  dateText: string,
+  options: { photos?: AnalysisPhoto[] } = {},
+): Promise<Blob> {
+  const photos = options.photos ?? [];
+  const P = photos.length ? PHOTO_SECTION_H : 0;
   const W = 1080;
-  const H = 1350;
+  const H = 1350 + P;
   const canvas = document.createElement("canvas");
   canvas.width = W;
   canvas.height = H;
@@ -62,8 +73,11 @@ export async function renderResultPng(result: ClassificationResult, dateText: st
           : "";
   ctx.fillText(`${sub}${sub ? "  ·  " : ""}${STRENGTH_LABEL[result.strength]}`, 80, 470);
 
+  // 분석 사진 (선택)
+  if (photos.length) drawPhotoSection(ctx, photos, 600, W, font);
+
   // 점수 막대
-  let y = 620;
+  let y = 620 + P;
   ctx.font = font(700, 32);
   ctx.fillStyle = "#121316";
   ctx.fillText("누적 근거 점수", 80, y);
@@ -107,6 +121,55 @@ export async function renderResultPng(result: ClassificationResult, dateText: st
   return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob failed"))), "image/png"));
 }
 
+function drawPhotoSection(
+  ctx: CanvasRenderingContext2D,
+  photos: AnalysisPhoto[],
+  top: number,
+  W: number,
+  font: (weight: number, size: number) => string,
+) {
+  ctx.font = font(700, 32);
+  ctx.fillStyle = "#121316";
+  ctx.fillText("분석 사진", 80, top);
+  ctx.font = font(400, 24);
+  ctx.fillStyle = "#6B6F76";
+  ctx.fillText("모델이 감지한 관절·측정선·윤곽 (옷 포함 외형)", 80, top + 46);
+
+  const gap = 24;
+  const boxTop = top + 100;
+  const boxH = 620;
+  const maxW = (W - 160 - gap * (photos.length - 1)) / photos.length;
+  // 상자를 사진 비율에 맞춰 좌우 빈 여백을 없앰
+  const widths = photos.map((ph) => Math.min(maxW, (boxH * ph.canvas.width) / ph.canvas.height));
+  const rowW = widths.reduce((a, b) => a + b, 0) + gap * (photos.length - 1);
+  let x = 80 + (W - 160 - rowW) / 2;
+  photos.forEach((ph, i) => {
+    const boxW = widths[i];
+    ctx.save();
+    roundRect(ctx, x, boxTop, boxW, boxH, 28);
+    ctx.fillStyle = "#16171B";
+    ctx.fill();
+    ctx.clip();
+    // 비율을 유지한 채 상자 안에 맞춤
+    const k = Math.min(boxW / ph.canvas.width, boxH / ph.canvas.height);
+    const w = ph.canvas.width * k;
+    const h = ph.canvas.height * k;
+    ctx.drawImage(ph.canvas, x + (boxW - w) / 2, boxTop + (boxH - h) / 2, w, h);
+    ctx.restore();
+    // 라벨
+    ctx.font = font(600, 22);
+    const tw = ctx.measureText(ph.label).width + 28;
+    ctx.fillStyle = "rgba(17,18,20,0.75)";
+    roundRect(ctx, x + 16, boxTop + 16, tw, 40, 20);
+    ctx.fill();
+    ctx.fillStyle = "#FFFFFF";
+    ctx.textBaseline = "middle";
+    ctx.fillText(ph.label, x + 30, boxTop + 37);
+    ctx.textBaseline = "top";
+    x += boxW + gap;
+  });
+}
+
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
   ctx.roundRect(x, y, w, h, r);
@@ -142,9 +205,8 @@ export async function pngToPdf(png: Blob): Promise<Blob> {
     r.readAsDataURL(png);
   });
   // PNG를 그대로 넣으면 용량이 커서 JPEG로 변환해 삽입
-  const img = new Image();
-  img.src = dataUrl;
-  await img.decode();
+  // decode()는 숨겨진 탭에서 끝나지 않을 수 있어 onload 기반으로 로드
+  const img = await dataUrlToImage(dataUrl);
   const canvas = document.createElement("canvas");
   canvas.width = img.width;
   canvas.height = img.height;
@@ -157,8 +219,10 @@ export async function pngToPdf(png: Blob): Promise<Blob> {
   const pdf = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
   const pageW = 210;
   const pageH = 297;
-  const imgW = 170;
-  const imgH = (imgW * 1350) / 1080;
-  pdf.addImage(jpeg, "JPEG", (pageW - imgW) / 2, Math.max(10, (pageH - imgH) / 2), imgW, imgH);
+  // 이미지 비율을 유지하며 여백 10mm 안에 맞춤 (사진 포함 시 세로가 더 김)
+  const k = Math.min(170 / img.width, (pageH - 20) / img.height);
+  const imgW = img.width * k;
+  const imgH = img.height * k;
+  pdf.addImage(jpeg, "JPEG", (pageW - imgW) / 2, (pageH - imgH) / 2, imgW, imgH);
   return pdf.output("blob");
 }
