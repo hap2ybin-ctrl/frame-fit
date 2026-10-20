@@ -277,3 +277,18 @@ export function computeLuminance(data: Uint8ClampedArray | Uint8Array, step = 4)
   const mean = sum / n;
   return { mean, std: Math.sqrt(Math.max(sumSq / n - mean * mean, 0)) };
 }
+
+/** 확인 대상(건너뛴 항목 제외) 중 통과한 개수 */
+export function checkProgress(report: QualityReport): { passed: number; total: number } {
+  const relevant = report.checks.filter((c) => c.status !== "skip");
+  return { passed: relevant.filter((c) => c.status === "pass").length, total: relevant.length };
+}
+
+/**
+ * 자동 촬영 조건: 실패뿐 아니라 주의(warn) 항목도 없이 모든 확인사항이 통과해야 함.
+ * (수동 촬영 버튼은 실패 항목만 없으면 사용 가능)
+ */
+export function allChecksPassed(report: QualityReport): boolean {
+  const { passed, total } = checkProgress(report);
+  return total > 0 && passed === total;
+}

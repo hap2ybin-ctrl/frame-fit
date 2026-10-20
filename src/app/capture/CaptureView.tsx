@@ -128,7 +128,7 @@ export function CaptureView() {
       {hydrated && capturingView && sequence && mode === "camera" && (
         <p className="mt-4 text-sm text-neutral-600">
           {capturingView === "front"
-            ? "정면을 찍으면 카메라를 끄지 않고 바로 측면 촬영으로 이어져요. 자동 촬영과 음성 안내를 켜면 멀리 서서도 끝까지 진행할 수 있어요."
+            ? "확인사항이 모두 통과하면 3초 후 자동으로 찍고, 카메라를 끄지 않고 바로 측면 촬영으로 이어져요. 음성 안내를 켜면 멀리 서서도 끝까지 진행할 수 있어요."
             : "몸을 옆으로 90도 돌려 주세요. 측면은 선택이라 건너뛸 수 있어요."}
         </p>
       )}

@@ -15,7 +15,7 @@ import { drawMeasurements, drawOutline, drawSkeleton, linesFromLandmarks } from 
 import type { PoseLandmark } from "@/lib/pose/landmarks";
 import { getLandmarker, toPoseModelError, type LoadedLandmarker } from "@/lib/pose/landmarker";
 import { maskLooksValid, maskToOutlineRGBA } from "@/lib/pose/mask";
-import { assessQuality, type CaptureView, type LuminanceStats, type QualityReport } from "@/lib/pose/quality";
+import { allChecksPassed, assessQuality, checkProgress, type CaptureView, type LuminanceStats, type QualityReport } from "@/lib/pose/quality";
 import { LandmarkSmoother, StabilityTracker } from "@/lib/pose/smoothing";
 import { useHydrated } from "@/lib/store/session";
 import { cn } from "@/lib/utils";
@@ -33,7 +33,8 @@ interface Props {
   onSkip?: () => void;
 }
 
-const AUTO_READY_MS = 1200;
+/** 모든 확인사항이 이 시간 동안 계속 통과해야 카운트다운 시작 */
+const AUTO_READY_MS = 1000;
 const COUNTDOWN_FROM = 3;
 /** 정면 촬영 후 몸을 돌리는 동안 자동 촬영을 멈추는 시간 */
 const TURN_CUE_MS = 3000;
@@ -55,7 +56,7 @@ export function CameraStage({ view, onCapture, onUploadInstead, sequence, onSkip
   const lastUiRef = useRef(0);
   const readySinceRef = useRef<number | null>(null);
   const fpsRef = useRef({ last: 0, frames: 0, value: 0 });
-  const optsRef = useRef({ outline: true, measure: true, auto: false, facing: "user" as Facing, view });
+  const optsRef = useRef({ outline: true, measure: true, auto: true, facing: "user" as Facing, view });
   const countdownRef = useRef<number | null>(null);
   const emptyMaskFramesRef = useRef(0);
   const turnCueRef = useRef(false);
@@ -69,7 +70,8 @@ export function CameraStage({ view, onCapture, onUploadInstead, sequence, onSkip
   const [quality, setQuality] = useState<QualityReport | null>(null);
   const [showOutline, setShowOutline] = useState(true);
   const [showMeasure, setShowMeasure] = useState(true);
-  const [autoCapture, setAutoCapture] = useState(false);
+  // 기본으로 켜짐: 모든 확인사항이 통과하면 3초 카운트다운 후 자동 촬영
+  const [autoCapture, setAutoCapture] = useState(true);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [aspect, setAspect] = useState(3 / 4);
   const [info, setInfo] = useState<{ fps: number; delegate: string } | null>(null);
@@ -187,9 +189,10 @@ export function CameraStage({ view, onCapture, onUploadInstead, sequence, onSkip
         }
       }
 
-      // 자동 촬영
-      // 몸을 돌리는 중(turnCue)에는 자동 촬영 대기
-      if (report.canMeasure && !turnCueRef.current) {
+      // 자동 촬영: 모든 확인사항이 통과한 상태가 유지되면 카운트다운 시작.
+      // 카운트다운 중에는 실패 항목이 생길 때만 취소(사소한 주의로 끊기지 않게). 몸을 돌리는 중(turnCue)에는 대기.
+      const allPass = allChecksPassed(report);
+      if (allPass && !turnCueRef.current) {
         readySinceRef.current ??= ts;
         if (opts.auto && countdownRef.current === null && ts - readySinceRef.current > AUTO_READY_MS) {
           countdownRef.current = COUNTDOWN_FROM;
@@ -198,8 +201,8 @@ export function CameraStage({ view, onCapture, onUploadInstead, sequence, onSkip
         }
       } else {
         readySinceRef.current = null;
-        if (countdownRef.current !== null) cancelCountdown();
       }
+      if (countdownRef.current !== null && (!report.canMeasure || turnCueRef.current)) cancelCountdown();
 
       // FPS
       const f = fpsRef.current;
@@ -217,7 +220,8 @@ export function CameraStage({ view, onCapture, onUploadInstead, sequence, onSkip
         setInfo({ fps: f.value, delegate: landmarkerRef.current?.delegate ?? "-" });
         // 음성 안내: 측정 불가 사유가 바뀌었거나 일정 시간 지속되면 읽어 줌
         const last = lastSpokenRef.current;
-        if (voiceRef.current && !report.canMeasure && !turnCueRef.current && countdownRef.current === null) {
+        const needsGuide = opts.auto ? !allPass : !report.canMeasure;
+        if (voiceRef.current && needsGuide && !turnCueRef.current && countdownRef.current === null) {
           if (report.primaryMessage !== last.text ? ts - last.at > 1500 : ts - last.at > VOICE_REPEAT_MS) say(report.primaryMessage);
         }
       }
@@ -443,7 +447,16 @@ export function CameraStage({ view, onCapture, onUploadInstead, sequence, onSkip
                 )}
               />
               {sequence && `${sequence.index}/${sequence.total} · `}
-              {view === "front" ? "정면" : "측면"} · {running ? (turnCue ? "몸 돌리는 중" : quality?.canMeasure ? "측정 가능" : "측정 대기") : "대기"}
+              {view === "front" ? "정면" : "측면"} ·{" "}
+              {running
+                ? turnCue
+                  ? "몸 돌리는 중"
+                  : countdown !== null
+                    ? "자동 촬영 중"
+                    : quality
+                      ? `확인 ${checkProgress(quality).passed}/${checkProgress(quality).total}${autoCapture ? " · 모두 통과 시 자동 촬영" : ""}`
+                      : "확인 중"
+                : "대기"}
             </span>
             {running && info && (
               <span className="rounded-full bg-black/55 px-2.5 py-1 font-display tabular backdrop-blur">
@@ -578,7 +591,11 @@ export function CameraStage({ view, onCapture, onUploadInstead, sequence, onSkip
           )}
         </div>
         <p id="capture-hint" className="mt-2 text-center text-xs text-neutral-500">
-          {running && !quality?.canMeasure ? "모든 필수 점검을 통과하면 촬영 버튼이 활성화돼요." : "저장되는 사진은 좌우 반전 없는 원본 방향으로 분석돼요."}
+          {running && autoCapture
+            ? "모든 확인사항이 통과하면 3초 카운트다운 후 자동으로 촬영해요. 직접 찍으려면 촬영 버튼을 누르세요."
+            : running && !quality?.canMeasure
+              ? "모든 필수 점검을 통과하면 촬영 버튼이 활성화돼요."
+              : "저장되는 사진은 좌우 반전 없는 원본 방향으로 분석돼요."}
         </p>
       </div>
 
@@ -600,7 +617,7 @@ export function CameraStage({ view, onCapture, onUploadInstead, sequence, onSkip
           </Label>
           <Label className="justify-between gap-3 font-normal">
             <span className="flex items-center gap-1.5">
-              <Timer className="size-3.5" aria-hidden /> 자동 촬영 (준비되면 3초 후)
+              <Timer className="size-3.5" aria-hidden /> 자동 촬영 (모두 통과 시 3초 후)
             </span>
             <Switch
               checked={autoCapture}

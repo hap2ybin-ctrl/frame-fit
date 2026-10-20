@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { computeFrontFeatures, computeSideFeatures } from "../analysis/features";
 import { LM, mirrorLandmarks } from "../pose/landmarks";
 import { maskLooksValid, maskToOutlineRGBA, rowRunAt } from "../pose/mask";
-import { assessQuality, computeLuminance } from "../pose/quality";
+import { allChecksPassed, assessQuality, checkProgress, computeLuminance } from "../pose/quality";
 import { LandmarkSmoother, OneEuroFilter, StabilityTracker } from "../pose/smoothing";
 import { syntheticMask, syntheticPose } from "./fixtures";
 
@@ -74,6 +74,37 @@ describe("assessQuality", () => {
     const s = computeLuminance(px, 1);
     expect(s.mean).toBeCloseTo(127.5, 0);
     expect(s.std).toBeCloseTo(127.5, 0);
+  });
+});
+
+describe("자동 촬영 조건", () => {
+  const base = { view: "front" as const, imageWidth: W, imageHeight: H, luminance: goodLight };
+
+  it("모든 확인사항(흔들림 포함)이 통과하면 자동 촬영 가능", () => {
+    const r = assessQuality({ ...base, poses: [syntheticPose()], jitter: 0.005 });
+    expect(allChecksPassed(r)).toBe(true);
+    expect(checkProgress(r)).toEqual({ passed: 8, total: 8 });
+  });
+
+  it("주의 항목이 하나라도 있으면 자동 촬영하지 않음 (수동 촬영은 가능)", () => {
+    const r = assessQuality({ ...base, poses: [syntheticPose({ centerX: 0.2 })], jitter: 0.005 });
+    expect(r.canMeasure).toBe(true);
+    expect(allChecksPassed(r)).toBe(false);
+    expect(checkProgress(r).passed).toBe(7);
+  });
+
+  it("흔들림 확인 전(null)이면 대기", () => {
+    expect(allChecksPassed(assessQuality({ ...base, poses: [syntheticPose()], jitter: null }))).toBe(false);
+  });
+
+  it("건너뛴 항목은 통과 수 계산에서 제외", () => {
+    const r = assessQuality({ ...base, poses: [syntheticPose()] }); // 사진 모드: 흔들림 skip
+    expect(checkProgress(r).total).toBe(7);
+    expect(allChecksPassed(r)).toBe(true);
+  });
+
+  it("사람이 없으면 자동 촬영 불가", () => {
+    expect(allChecksPassed(assessQuality({ ...base, poses: [] }))).toBe(false);
   });
 });
 
