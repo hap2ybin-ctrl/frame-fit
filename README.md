@@ -1,36 +1,167 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# FRAME FIT
 
-## Getting Started
+> 나의 체형을 읽고, 나에게 맞는 스타일을 찾다.
 
-First, run the development server:
+FRAME FIT은 브라우저 안에서 전신 포즈를 추적해 신체 비율과 실루엣을 시각화하는 웹앱입니다. 사용자의 자가 체크를 함께 반영해 스트레이트·웨이브·내추럴 골격 유형의 **경향**을 정리하고 맞춤 코디를 제안합니다. 결과는 참고용이며 진단이 아닙니다.
+
+## 빠른 시작
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install          # postinstall에서 MediaPipe WASM을 public/mediapipe/wasm으로 복사
+npm run dev          # http://localhost:3000
+npm test             # 단위 테스트 (Vitest)
+npm run typecheck    # TypeScript strict 검사
+npm run lint
+npm run build && npm start
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 휴대폰에서 카메라 테스트하기 (HTTPS 필요)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+카메라는 `localhost` 또는 HTTPS에서만 열립니다. 같은 Wi‑Fi에 있는 휴대폰으로 확인하려면 다음처럼 실행하세요.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npx next dev --experimental-https -H 0.0.0.0
+```
 
-## Learn More
+그다음 휴대폰에서 `https://<PC의 LAN IP>:3000`에 접속해 자체 서명 인증서 경고를 허용합니다. 배포 환경(Vercel 등)은 기본으로 HTTPS를 사용합니다.
 
-To learn more about Next.js, take a look at the following resources:
+### 사진만으로 전체 플로우 테스트
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+카메라가 없어도 **촬영 → 사진 업로드**로 전체 플로우(분석 → 체크 → 결과 → 스타일)를 진행할 수 있습니다. 사진을 쓰지 않고 자가 체크만 하는 경로도 있습니다.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 기술 스택
 
-## Deploy on Vercel
+| 영역 | 사용 기술 |
+|---|---|
+| 프레임워크 | Next.js 16.4 (App Router, Turbopack, Cache Components), React 19.3, TypeScript 5.9 strict |
+| UI | Tailwind CSS 4, shadcn/ui (Base UI), Lucide |
+| 포즈 추적 | `@mediapipe/tasks-vision` 1.1.1 Pose Landmarker (lite: 실시간, full: 사진) + 인체 분할 마스크 |
+| 렌더링 | `<video>` + Canvas HUD, SVG 가이드·일러스트 |
+| 내보내기 | Canvas → PNG, jsPDF → PDF (PNG를 JPEG로 바꿔 삽입하므로 한글 폰트 문제가 없음) |
+| 테스트 | Vitest |
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 폴더 구조
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```
+src/
+├─ app/                       # 라우트 (페이지는 서버 컴포넌트, 상호작용 부분은 *View.tsx 클라이언트 컴포넌트)
+│  ├─ page.tsx                # 1. 랜딩
+│  ├─ guide/                  # 2. 촬영 안내
+│  ├─ capture/                # 3·4. 실시간 카메라 / 사진 업로드, 정면·측면
+│  ├─ analyze/                # 5. 실제 포즈 분석 + 진행 상태 + 관찰 불가 항목
+│  ├─ check/                  # 6. 보완 자가 체크 (8문항)
+│  ├─ result/                 # 7·9. 결과, 근거, 품질, 한계, 저장/PNG/PDF/공유
+│  ├─ style/                  # 8. 맞춤 코디, 옷장 조합, 스타일 포인트
+│  ├─ saved/                  # 저장된 결과·세션 데이터 관리/삭제
+│  ├─ privacy/, about/        # 개인정보 처리, 분석 방법과 한계
+├─ components/
+│  ├─ camera/CameraStage.tsx  # 실시간 추적 루프, HUD, 품질 점검, 자동 촬영, 카메라 전환
+│  ├─ camera/UploadDrop.tsx   # 업로드 (EXIF 회전 반영, HEIC 안내)
+│  ├─ result/                 # 분석 오버레이, 결과 히어로, 근거 아코디언
+│  ├─ style/                  # 코디 카드, 자체 제작 의복 SVG
+│  └─ ui/                     # shadcn/ui
+└─ lib/
+   ├─ pose/                   # 랜드마크 정의, 로더, 품질 점검, 스무딩, 마스크, HUD 그리기
+   ├─ analysis/               # 특징 계산(features), 사진 분석 파이프라인, 분류 입력 생성
+   ├─ classifier/             # ★ 판정 엔진(engine) + 규칙 설정(rules.config) + 문항 설정(questions.config)
+   ├─ styling/                # ★ 의복 카탈로그 데이터, 스타일 포인트, 추천 엔진
+   ├─ store/                  # sessionStorage 세션 / 동의 기반 localStorage 저장
+   ├─ export/                 # 결과 PNG/PDF
+   ├─ extensions/tryon.ts     # 미구현 확장 모듈 인터페이스 (Try-On 등)
+   └─ __tests__/              # 단위 테스트
+scripts/copy-mediapipe-wasm.mjs
+```
+
+## 분석 파이프라인
+
+1. **로딩**: WASM은 `/public/mediapipe/wasm`에서 먼저 불러오고, 실패하면 jsDelivr로 폴백합니다. 모델(`.task`)은 Google 공식 저장소에서 받습니다.
+2. **실시간 추적**(VIDEO, lite)
+   - 33개 랜드마크와 관절 연결선, 어깨선·골반선, 몸통/다리 눈금자, 분할 마스크 윤곽을 그립니다.
+   - 전면 카메라는 미리보기와 오버레이를 같은 방식으로 좌우 반전합니다. 텍스트는 반전하지 않습니다.
+   - 저장되는 사진은 반전하지 않은 원본 방향입니다.
+3. **품질 점검**(`lib/pose/quality.ts`): 인원 0명/2명 이상, 관절 가시성, 전신 포함, 화면 속 크기, 중앙 위치, 자세(정면·측면·기울기), 밝기·대비, 흔들림을 확인합니다.
+   - 흔들림은 One Euro 필터를 거치기 **전**의 원본 좌표로 계산합니다. 기준을 넘으면 측정선을 숨기고 촬영 버튼을 비활성화합니다.
+4. **사진 분석**(IMAGE, full, CPU)
+   - 품질 기준을 통과하지 못하면 측정하지 않고, 재촬영·다른 사진·자가 체크 옵션을 안내합니다. 가짜 랜드마크나 결과는 만들지 않습니다.
+5. **특징 계산**(`lib/analysis/features.ts`): 모든 값은 이미지 픽셀 좌표로 바꾼 뒤 계산한 **무단위 비율**입니다.
+
+| 특징 | 출처 | 비고 |
+|---|---|---|
+| 어깨 관절 폭 ÷ 골반 관절 폭 | 랜드마크 | 골반 랜드마크는 고관절 중심 추정치 |
+| 몸통 길이 ÷ 다리 길이 | 랜드마크 | 골반선 위치 |
+| 어깨 관절 폭 ÷ 몸통 길이 | 랜드마크 | 몸이 회전하면 작아짐 |
+| 윤곽 허리 ÷ 윤곽 엉덩이 | 분할 마스크 | 옷 영향 큼, 팔이 붙어 있으면 측정 생략 |
+| 윤곽 어깨 ÷ 윤곽 엉덩이 | 분할 마스크 | 옷 영향 큼 |
+| 측면 상체/허리 윤곽 깊이 ÷ 몸통 길이 | 분할 마스크 | 옷 두께와 신체 두께를 구분할 수 없음 |
+
+**추정하지 않는 항목**: 쇄골 돌출, 근육·지방 분포, 옷 아래 신체 두께, 관절 크기, 조직 질감, cm 치수·체중·체지방률.
+
+## 판정 엔진 (`lib/classifier`)
+
+- 입력: `visualFeatures`, `selfAssessment`, `quality`
+- 출력: `classification`(straight | wave | natural | mixed | inconclusive), `primary`, `secondary`, `scores`, `evidence`(근거별 기여 점수), `strength`, `limitations`
+- 규칙과 가중치는 `rules.config.ts`, 자가 체크 문항과 점수는 `questions.config.ts`에 있으며, **둘 다 검증되지 않은 초기 휴리스틱**입니다.
+- 판정 규칙
+  - "잘 모르겠어요"를 제외한 응답이 4개 미만이면 **판정 보류**입니다. 사진만으로는 유형을 판정하지 않습니다.
+  - 1위 점수가 3 미만이면 **판정 보류**입니다.
+  - 1·2위 차이가 15% 미만이면 **혼합형**입니다.
+  - 사진 근거와 자가 체크 근거가 다른 유형을 가리키고 그 차이가 25% 미만이어도 **혼합형**입니다.
+  - 촬영 품질에 따라 사진 근거에 배수를 곱합니다: 좋음 ×1, 보통 ×0.6, 측정 불가 ×0.
+  - 측면 윤곽 규칙은 사용자가 "몸에 붙는 옷"을 체크한 경우에만 낮은 비중으로 반영합니다.
+- 점수는 규칙이 일치한 정도를 더한 값이며, UI 어디에서도 확률·정확도(%)로 표현하지 않습니다.
+
+## 맞춤 코디 (`lib/styling`)
+
+- `garments.data.ts`: 의복 36종의 데이터입니다. 각 항목에는 유형별 어울림(0~2), 상황, 실루엣 목표, 강조 부위, 취향, 속성(넥라인·기장·허리선·핏·소재·패턴·레이어드), 유형별 이유, 효과, 대안이 들어 있습니다.
+- `recommend.ts`
+  - 상의×하의 조합과 원피스 조합을 모두 만든 뒤 점수를 매기고, 재사용 패널티를 적용해 상황마다 서로 다른 코디를 골라 최소 3개를 만듭니다.
+  - 아우터, 신발, 소품도 점수로 고릅니다.
+  - 옷장 모드는 체크한 보유 의류만으로 조합하고, 부족한 슬롯과 하나만 더하면 좋은 아이템을 안내합니다.
+- 금지 의상은 없습니다. 어울림이 낮은 아이템에도 입는 방법을 안내합니다.
+- 판정 보류일 때는 유형 가중치 없이 선호 조건만으로 추천합니다.
+
+## 개인정보
+
+- 영상, 사진, 좌표를 서버로 전송하지 않습니다. 네트워크 요청은 WASM·모델 파일 다운로드뿐입니다.
+- 세션 데이터(사진, 좌표, 응답, 결과)는 `sessionStorage`에 있으며, 탭을 닫으면 사라집니다.
+- 저장은 사용자가 동의한 경우에만 `localStorage`에 하며, 사진·좌표는 빼고 결과 요약만 남깁니다. 개별 삭제와 전체 삭제를 지원합니다.
+- `Permissions-Policy: camera=(self)` 헤더를 사용합니다. 로그인은 없습니다.
+- 모델을 자체 호스팅하려면 아래 환경 변수를 설정하세요.
+
+```bash
+NEXT_PUBLIC_POSE_MODEL_LITE_URL=/models/pose_landmarker_lite.task
+NEXT_PUBLIC_POSE_MODEL_FULL_URL=/models/pose_landmarker_full.task
+```
+
+## 구현 범위
+
+### MVP에서 실제로 작동하는 기능
+- 카메라 권한 요청과 거부·미지원·HTTP·사용 중 상태 처리, 전·후면 카메라 전환
+- 실시간 33개 랜드마크·관절선·측정선·분할 마스크 윤곽 HUD, 실시간 품질 점검, 흔들림 시 측정 중단, 자동 촬영(카운트다운)
+- 정면·측면 연속 촬영: 카메라를 켠 채 정면 → 몸 돌리기 안내(3초간 자동 촬영 대기) → 측면으로 이어짐, 측면 건너뛰기, 두 사진 요약·개별 재촬영
+- 촬영 보조: 셔터음·플래시, 기기 내장 TTS 음성 안내(선택)
+- 사진 업로드(EXIF 회전 반영)와 정면·측면 슬롯, 다시 촬영, 미리보기
+- 실제 모델 결과 기반의 비율 계산, 관찰 가능한 항목과 관찰 불가 항목 분리, 분석 진행 상태 시각화
+- 8문항 자가 체크와 규칙 엔진(혼합형·판정 보류 포함), 근거 아코디언
+- 데이터 기반 코디 3개 이상, 상황·실루엣·부위·취향 필터, 옷장 조합, 유형별 스타일 포인트 8항목
+- 동의 기반 로컬 저장·삭제, PNG/PDF 내보내기, Web Share(지원 브라우저)
+
+### 미구현 (향후 계획) — 앱 안에서 작동하는 것처럼 표시하지 않음
+`lib/extensions/tryon.ts`에 인터페이스와 기능 플래그(모두 `false`)만 정의되어 있습니다.
+1. 코디 실루엣 오버레이 (분석 사진 위에 추천 의복을 정렬)
+2. 옷장 등록 (현재는 종류 체크만 가능하고, 사진·속성 등록은 없음)
+3. 쇼핑 링크 연동
+4. 의류 이미지 기반 사진형 Virtual Try-On (외부 전송이 필요하면 별도 동의 필요)
+5. 실시간 의류 AR Try-On
+
+## 현재 제한사항
+
+- **규칙과 임계값은 검증되지 않았습니다.** 전문가 판정 데이터와 대조해 보정해야 합니다.
+- 2D 포즈 랜드마크는 관절 중심 추정치이므로 촬영 거리, 렌즈 왜곡, 자세에 따라 비율이 달라집니다.
+- 분할 마스크는 옷을 포함한 외형입니다. 팔이 몸통에 붙어 있으면 허리·엉덩이 윤곽은 측정하지 않습니다.
+- 일부 WebGL 환경에서는 GPU 마스크를 읽을 수 없어(`glReadPixels` 오류) 빈 마스크가 나옵니다.
+  - 사진 분석은 처음부터 CPU로 실행합니다.
+  - 실시간 모드는 빈 마스크가 반복되면 CPU로 자동 전환합니다.
+- iOS Safari는 HEIC를 열 수 있지만, 데스크톱 Chrome은 HEIC를 열 수 없어 안내 메시지를 보여 줍니다.
+- 개발 모드의 Next.js 오버레이에는 MediaPipe가 `console.error`로 출력하는 정보 로그(`INFO: Created TensorFlow Lite XNNPACK delegate for CPU`)가 "Issue"로 표시될 수 있습니다. 오류가 아니며, 프로덕션 빌드에서는 오버레이가 표시되지 않습니다.
+- 실제 카메라 영상의 실시간 추적은 기기별 성능 차이가 있습니다(lite 모델 기준). 저사양 모바일에서는 FPS가 낮을 수 있습니다.
