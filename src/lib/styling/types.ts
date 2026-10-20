@@ -1,10 +1,14 @@
 import type { BodyType, TypeScores } from "../classifier/types";
 
 export type StyleLine = "women" | "men" | "unisex";
-export type Occasion = "casual" | "business" | "date" | "formal";
-export type SilhouetteGoal = "neat" | "volume" | "long" | "comfort";
+/** casual=일상, business=출근, date=데이트, formal=행사, travel=여행 */
+export type Occasion = "casual" | "business" | "date" | "formal" | "travel";
+/** 원하는 효과: 균형감 / 길어 보이는 비율 / 볼륨감 / 단정함 */
+export type SilhouetteGoal = "balance" | "long" | "volume" | "neat";
 export type FocusArea = "shoulder" | "neck" | "waist" | "legs";
-export type Taste = "minimal" | "classic" | "soft" | "street" | "natural";
+export type Taste = "minimal" | "classic" | "casual" | "street" | "formal";
+/** 의복 핏 분류 (실루엣 비교·선호 핏 기록에 사용) */
+export type FitClass = "slim" | "regular" | "over";
 export type Slot = "top" | "bottom" | "dress" | "outer" | "shoes" | "accessory";
 
 export type GarmentShape =
@@ -62,6 +66,8 @@ export interface Garment {
   focus: FocusArea[];
   tastes: Taste[];
   attrs: GarmentAttrs;
+  /** 핏 분류 (신발·소품은 없음) */
+  fitClass?: FitClass;
   /** 옷장 체크 항목과 연결되는 키 */
   closetKey: string;
   shape: GarmentShape;
@@ -82,6 +88,9 @@ export interface StylePreferences {
   tastes: Taste[];
 }
 
+/** 코디 추천의 유형 기준 */
+export type TypeMode = "auto" | "straight" | "wave" | "natural" | "mixed";
+
 export interface OutfitItem {
   garment: Garment;
   why: string;
@@ -90,11 +99,17 @@ export interface OutfitItem {
 
 export interface Outfit {
   id: string;
+  /** 상의+하의(또는 원피스) 조합 키 — 코디 제외·저장에 사용 */
+  coreKey: string;
   title: string;
   occasion: Occasion;
   concept: string;
   items: OutfitItem[];
   effect: string;
+  /** 코디 전체 추천 이유 */
+  reason: string;
+  /** 핏 조절 방법 */
+  fitTips: string[];
   score: number;
   /** 옷장 기반 조합이면 true */
   fromCloset: boolean;

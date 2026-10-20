@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, Download, FileText, RotateCcw, Save, Share2, Trash2 } from "lucide-react";
 import { QualityBadge } from "@/components/camera/QualityPanel";
 import { Notice } from "@/components/flow/Notice";
+import { BodyInsightMap } from "@/components/result/BodyInsightMap";
 import { EvidenceAccordion, ScoreBars, TypeHero } from "@/components/result/ResultParts";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { composeAnalysisPhoto, type AnalysisPhoto } from "@/lib/export/analysisImage";
 import { pngToPdf, renderResultPng } from "@/lib/export/resultImage";
 import { downloadBlob } from "@/lib/image/image";
+import { usePreferences } from "@/lib/preferences/store";
 import { saveResult, toSavedResult } from "@/lib/store/saved";
 import { clearSession, useHydrated, useSession } from "@/lib/store/session";
 import { cn } from "@/lib/utils";
@@ -23,6 +25,7 @@ function formatDate(iso: string | null) {
 
 export function ResultView() {
   const session = useSession();
+  const prefs = usePreferences();
   const hydrated = useHydrated();
   const [consent, setConsent] = useState(false);
   const [saved, setSaved] = useState<string | null>(null);
@@ -111,7 +114,7 @@ export function ResultView() {
   }
   function save() {
     try {
-      const entry = toSavedResult(result!, session.prefs, session.closet, crypto.randomUUID(), new Date().toISOString());
+      const entry = toSavedResult(result!, prefs.style, prefs.closet, crypto.randomUUID(), new Date().toISOString());
       saveResult(entry);
       setSaved(entry.id);
       setMsg({ tone: "ok", text: "이 브라우저에 결과 요약을 저장했어요. '내 결과'에서 확인·삭제할 수 있어요." });
@@ -126,6 +129,16 @@ export function ResultView() {
       <div className="mt-4">
         <TypeHero result={result} />
       </div>
+
+      <section aria-labelledby="body-map" className="mt-10">
+        <h2 id="body-map" className="text-xl font-bold tracking-tight">체형 비율 맵</h2>
+        <p className="mt-1 text-sm text-neutral-600">
+          부위를 누르면 관찰 결과와 코디 팁을 볼 수 있어요. 점선 부위는 카메라로 측정하지 않고 자가 체크 응답만 보여 줘요.
+        </p>
+        <div className="mt-4">
+          <BodyInsightMap front={front} side={side} answers={session.answers} photoUrl={session.captures.front?.dataUrl} />
+        </div>
+      </section>
 
       <div className="mt-10 grid gap-10 lg:grid-cols-[1fr_360px]">
         <div className="space-y-10">

@@ -15,10 +15,12 @@ export function SiteFooter() {
             전송되지 않습니다.
           </p>
         </div>
-        <nav aria-label="하단 메뉴" className="flex gap-4 sm:flex-col sm:items-end sm:gap-2">
+        <nav aria-label="하단 메뉴" className="flex flex-wrap gap-x-4 gap-y-2 sm:flex-col sm:items-end">
           <Link href="/privacy" className="hover:text-ink">개인정보와 데이터</Link>
           <Link href="/about" className="hover:text-ink">분석 방법과 한계</Link>
           <Link href="/saved" className="hover:text-ink">저장된 결과 관리</Link>
+          <Link href="/lookbook" className="hover:text-ink">코디북</Link>
+          <Link href="/fit-lab" className="hover:text-ink">실루엣 비교</Link>
         </nav>
       </div>
     </footer>

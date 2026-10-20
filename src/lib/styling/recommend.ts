@@ -1,8 +1,10 @@
 import { TYPE_LABEL } from "../classifier/engine";
 import { BODY_TYPES, type BodyType, type Classification, type TypeScores } from "../classifier/types";
+import { FIT_TIPS, GOAL_TIPS } from "./fitGuide.data";
 import { GARMENTS } from "./garments.data";
 import { NEUTRAL_POINTS, STYLE_POINTS } from "./stylePoints.data";
 import type {
+  FitClass,
   FocusArea,
   Garment,
   Occasion,
@@ -13,19 +15,21 @@ import type {
   StylePoint,
   StylePreferences,
   Taste,
+  TypeMode,
 } from "./types";
 
 export const OCCASION_LABEL: Record<Occasion, string> = {
-  casual: "캐주얼",
-  business: "비즈니스",
+  casual: "일상",
+  business: "출근",
   date: "데이트",
-  formal: "포멀",
+  formal: "행사",
+  travel: "여행",
 };
 export const GOAL_LABEL: Record<SilhouetteGoal, string> = {
-  neat: "단정함",
-  volume: "볼륨 강조",
+  balance: "균형감",
   long: "길어 보이는 비율",
-  comfort: "편안함",
+  volume: "볼륨감",
+  neat: "단정함",
 };
 export const FOCUS_LABEL: Record<FocusArea, string> = {
   shoulder: "어깨선",
@@ -36,10 +40,29 @@ export const FOCUS_LABEL: Record<FocusArea, string> = {
 export const TASTE_LABEL: Record<Taste, string> = {
   minimal: "미니멀",
   classic: "클래식",
-  soft: "소프트",
+  casual: "캐주얼",
   street: "스트리트",
-  natural: "내추럴 무드",
+  formal: "포멀",
 };
+export const FIT_LABEL: Record<FitClass, string> = {
+  slim: "슬림핏",
+  regular: "레귤러핏",
+  over: "오버핏",
+};
+
+/** 저장된 선호값에 예전 버전의 값이 섞여 있어도 안전하게 정리 */
+export function normalizePrefs(p: Partial<StylePreferences> | undefined): StylePreferences {
+  const pick = <T extends string>(arr: unknown, labels: Record<T, string>): T[] =>
+    Array.isArray(arr) ? (arr.filter((x) => typeof x === "string" && x in labels) as T[]) : [];
+  const occasions = pick(p?.occasions, OCCASION_LABEL);
+  return {
+    line: p?.line === "women" || p?.line === "men" || p?.line === "unisex" ? p.line : "unisex",
+    occasions: occasions.length ? occasions : ["casual"],
+    goals: pick(p?.goals, GOAL_LABEL),
+    focus: pick(p?.focus, FOCUS_LABEL),
+    tastes: pick(p?.tastes, TASTE_LABEL),
+  };
+}
 
 /** 추천 가중치 — 검증되지 않은 초기값 */
 export const RECOMMEND_WEIGHTS = {
@@ -50,6 +73,10 @@ export const RECOMMEND_WEIGHTS = {
   focus: 0.5,
   taste: 0.35,
   reusePenalty: 2.5,
+  /** 선호 핏으로 기록한 핏의 아이템 가산 */
+  fitPreference: 0.5,
+  /** "덜 추천"으로 표시한 아이템 감점 */
+  dislikedPenalty: 3,
   accessoryMin: 1.6,
   outerMinCasual: 2.4,
 } as const;
@@ -87,7 +114,16 @@ export interface ScoredGarment {
   matched: string[];
 }
 
-export function scoreGarment(g: Garment, weights: TypeScores, prefs: StylePreferences): ScoredGarment {
+/** 사용자 피드백 (취향 데이터 — 분석 데이터와 별도) */
+export interface RecommendFeedback {
+  /** 제외한 코디의 coreKey */
+  excludedCores?: string[];
+  /** 덜 추천할 아이템 id */
+  dislikedGarments?: string[];
+  fitPreference?: FitClass | null;
+}
+
+export function scoreGarment(g: Garment, weights: TypeScores, prefs: StylePreferences, feedback: RecommendFeedback = {}): ScoredGarment {
   let score = 0;
   const matched: string[] = [];
   let bestType: BodyType | null = null;
@@ -115,6 +151,11 @@ export function scoreGarment(g: Garment, weights: TypeScores, prefs: StylePrefer
       matched.push(TASTE_LABEL[t]);
     }
   }
+  if (feedback.fitPreference && g.fitClass === feedback.fitPreference) {
+    score += RECOMMEND_WEIGHTS.fitPreference;
+    matched.push(`선호 ${FIT_LABEL[feedback.fitPreference]}`);
+  }
+  if (feedback.dislikedGarments?.includes(g.id)) score -= RECOMMEND_WEIGHTS.dislikedPenalty;
   return { garment: g, score: Math.round(score * 100) / 100, matched };
 }
 
@@ -128,6 +169,7 @@ function whyFor(g: Garment, result: ResultLike | null): string {
 interface BuildContext {
   result: ResultLike | null;
   prefs: StylePreferences;
+  feedback: RecommendFeedback;
   weights: TypeScores;
   catalog: Garment[];
   usage: Map<string, number>;
@@ -141,7 +183,7 @@ function pickBest(ctx: BuildContext, slot: Slot, occasion: Occasion): ScoredGarm
     if (g.slot !== slot || !lineMatches(g, ctx.prefs.line)) continue;
     const occOk = g.occasions.includes(occasion);
     if (ctx.strictOccasion && !occOk) continue;
-    const sg = scoreGarment(g, ctx.weights, ctx.prefs);
+    const sg = scoreGarment(g, ctx.weights, ctx.prefs, ctx.feedback);
     const adj = sg.score - (ctx.usage.get(g.id) ?? 0) * RECOMMEND_WEIGHTS.reusePenalty - (occOk ? 0 : 1.5);
     if (adj > bestAdj || (adj === bestAdj && best && g.id < best.garment.id)) {
       best = sg;
@@ -160,14 +202,14 @@ function eligibleScored(ctx: BuildContext, slot: Slot, occasion: Occasion): Arra
     .filter((g) => g.slot === slot && lineMatches(g, ctx.prefs.line))
     .filter((g) => !ctx.strictOccasion || g.occasions.includes(occasion))
     .map((g) => {
-      const sg = scoreGarment(g, ctx.weights, ctx.prefs);
+      const sg = scoreGarment(g, ctx.weights, ctx.prefs, ctx.feedback);
       const adj = sg.score - (ctx.usage.get(g.id) ?? 0) * RECOMMEND_WEIGHTS.reusePenalty - (g.occasions.includes(occasion) ? 0 : 1.5);
       return { ...sg, adj };
     });
 }
 
-/** 상의+하의 또는 원피스 조합 중, 아직 제안하지 않은 가장 좋은 조합 */
-function pickCore(ctx: BuildContext, occasion: Occasion, chosen: Set<string>): ScoredGarment[] | null {
+/** 상의+하의 또는 원피스 조합 중, 아직 제안하지 않았고 제외하지 않은 가장 좋은 조합 */
+function pickCore(ctx: BuildContext, occasion: Occasion, chosen: Set<string>): { parts: ScoredGarment[]; key: string } | null {
   const candidates: Array<{ parts: ScoredGarment[]; adj: number; key: string }> = [];
   const tops = eligibleScored(ctx, "top", occasion);
   const bottoms = eligibleScored(ctx, "bottom", occasion);
@@ -182,22 +224,53 @@ function pickCore(ctx: BuildContext, occasion: Occasion, chosen: Set<string>): S
     }
   }
   let best: (typeof candidates)[number] | null = null;
+  const excluded = new Set(ctx.feedback.excludedCores ?? []);
   for (const c of candidates) {
-    if (chosen.has(c.key)) continue;
+    if (chosen.has(c.key) || excluded.has(c.key)) continue;
     if (!best || c.adj > best.adj || (c.adj === best.adj && c.key < best.key)) best = c;
   }
   if (!best) return null;
   chosen.add(best.key);
-  return best.parts;
+  return { parts: best.parts, key: best.key };
+}
+
+/** 코디 전체의 추천 이유 */
+function outfitReason(ctx: BuildContext, occasion: Occasion, mainNames: string[]): string {
+  const r = ctx.result;
+  const typeText =
+    r?.primary && r.classification !== "inconclusive"
+      ? r.classification === "mixed" && r.secondary
+        ? `${TYPE_LABEL[r.primary]}·${TYPE_LABEL[r.secondary]} 혼합 경향에 함께 어울리는`
+        : `${TYPE_LABEL[r.primary]} 경향에 어울리는`
+      : "유형 기준 없이 선택한 조건에 맞는";
+  const goals = ctx.prefs.goals.map((g) => `'${GOAL_LABEL[g]}'`).join(", ");
+  const tastes = ctx.prefs.tastes.map((t) => TASTE_LABEL[t]).join("·");
+  const parts = [`${typeText} ${mainNames.join(" + ")} 조합이에요.`, `${OCCASION_LABEL[occasion]} 상황에 맞는 아이템으로 골랐어요.`];
+  if (goals) parts.push(`원하는 효과 ${goals}에 맞춰 실루엣을 조정했어요.`);
+  if (tastes) parts.push(`${tastes} 취향을 반영했어요.`);
+  return parts.join(" ");
+}
+
+/** 코디의 핏 조절 방법: 유형별 부위 팁(최대 3) + 선택한 효과별 팁(최대 2) */
+export function fitTipsFor(result: ResultLike | null, slots: Slot[], goals: SilhouetteGoal[]): string[] {
+  const type = result?.primary && result.classification !== "inconclusive" ? result.primary : "neutral";
+  const order: Slot[] = ["top", "dress", "bottom", "outer", "shoes", "accessory"];
+  const tips = order
+    .filter((s) => slots.includes(s))
+    .map((s) => FIT_TIPS[type][s])
+    .filter((t): t is string => !!t)
+    .slice(0, 3);
+  return [...tips, ...goals.slice(0, 2).map((g) => GOAL_TIPS[g])];
 }
 
 function buildOne(ctx: BuildContext, occasion: Occasion, variant: number, fromCloset: boolean, chosen: Set<string>): Outfit | null {
   const core = pickCore(ctx, occasion, chosen);
   if (!core) return null;
-  const parts: ScoredGarment[] = [...core];
+  const parts: ScoredGarment[] = [...core.parts];
 
   const outer = pickBest(ctx, "outer", occasion);
   const needsOuter = occasion === "business" || occasion === "formal";
+  // 여행은 짐을 줄이도록 아우터를 기본으로 넣지 않음 (점수가 높을 때만)
   if (outer && (needsOuter || variant === 1 || outer.score >= RECOMMEND_WEIGHTS.outerMinCasual)) parts.push(outer);
   const shoes = pickBest(ctx, "shoes", occasion);
   if (shoes) parts.push(shoes);
@@ -212,11 +285,18 @@ function buildOne(ctx: BuildContext, occasion: Occasion, variant: number, fromCl
   const mainParts = parts.filter((p) => p.garment.slot !== "shoes" && p.garment.slot !== "accessory");
   return {
     id: `${fromCloset ? "closet" : "rec"}-${occasion}-${variant}-${parts.map((p) => p.garment.id).join("+")}`,
+    coreKey: core.key,
     title: `${OCCASION_LABEL[occasion]} · ${lead.garment.effect}`,
     occasion,
     concept: mainParts.map((p) => p.garment.name).join(" + "),
     items: parts.map((p) => toItem(p, ctx.result)),
     effect: effects.join(", "),
+    reason: outfitReason(ctx, occasion, mainParts.map((p) => p.garment.name)),
+    fitTips: fitTipsFor(
+      ctx.result,
+      parts.map((p) => p.garment.slot),
+      ctx.prefs.goals,
+    ),
     score,
     fromCloset,
   };
@@ -225,6 +305,7 @@ function buildOne(ctx: BuildContext, occasion: Occasion, variant: number, fromCl
 export interface RecommendInput {
   result: ResultLike | null;
   prefs: StylePreferences;
+  feedback?: RecommendFeedback;
   catalog?: Garment[];
 }
 
@@ -235,6 +316,7 @@ export function recommendOutfits(input: RecommendInput, minCount = 3): Outfit[] 
   const ctx: BuildContext = {
     result: input.result,
     prefs: input.prefs,
+    feedback: input.feedback ?? {},
     weights: typeWeights(input.result),
     catalog,
     usage: new Map(),
@@ -275,6 +357,7 @@ export function recommendFromCloset(input: RecommendInput & { closet: string[] }
   const ctx: BuildContext = {
     result: input.result,
     prefs: input.prefs,
+    feedback: input.feedback ?? {},
     weights,
     catalog: ownedCatalog,
     usage: new Map(),
@@ -295,7 +378,7 @@ export function recommendFromCloset(input: RecommendInput & { closet: string[] }
   for (const slot of ["top", "bottom", "outer", "shoes", "accessory"] as Slot[]) {
     const best = catalog
       .filter((g) => g.slot === slot && !owned.has(g.closetKey) && lineMatches(g, input.prefs.line))
-      .map((g) => scoreGarment(g, weights, input.prefs))
+      .map((g) => scoreGarment(g, weights, input.prefs, input.feedback))
       .sort((a, b) => b.score - a.score)[0];
     if (best) suggestions.push(best.garment);
   }
@@ -309,4 +392,65 @@ export function recommendFromCloset(input: RecommendInput & { closet: string[] }
 export function stylePointsFor(result: ResultLike | null): { type: BodyType | null; points: StylePoint[] } {
   if (!result?.primary || result.classification === "inconclusive") return { type: null, points: NEUTRAL_POINTS };
   return { type: result.primary, points: STYLE_POINTS[result.primary] };
+}
+
+// ── 유형 기준 결정 ─────────────────────────────────────────────
+
+export interface TypeContext {
+  result: ResultLike | null;
+  /** 어디서 온 유형 기준인지 */
+  source: "session" | "saved" | "manual" | "none";
+  label: string;
+}
+
+/**
+ * 코디 추천에 쓸 유형 기준.
+ * auto: 현재 세션 결과 → 저장된 최근 결과 → 없음(선호 조건만)
+ * 직접 선택: 해당 유형, mixed: 고른 두 유형의 혼합형
+ */
+export function resolveTypeContext(
+  mode: TypeMode,
+  mixedPair: [BodyType, BodyType],
+  sessionResult: ResultLike | null,
+  savedResult: ResultLike | null,
+): TypeContext {
+  if (mode === "auto") {
+    if (sessionResult) return { result: sessionResult, source: "session", label: "이번 분석 결과" };
+    if (savedResult) return { result: savedResult, source: "saved", label: "저장된 최근 결과" };
+    return { result: null, source: "none", label: "유형 기준 없음" };
+  }
+  if (mode === "mixed") {
+    const [a, b] = mixedPair[0] === mixedPair[1] ? (["straight", "wave"] as [BodyType, BodyType]) : mixedPair;
+    return { result: { classification: "mixed", primary: a, secondary: b }, source: "manual", label: `${TYPE_LABEL[a]}·${TYPE_LABEL[b]} 혼합형 (직접 선택)` };
+  }
+  return { result: { classification: mode, primary: mode, secondary: null }, source: "manual", label: `${TYPE_LABEL[mode]} (직접 선택)` };
+}
+
+/** 저장된 코디(아이템 id 목록)를 현재 카탈로그로 다시 구성 */
+export function outfitFromSnapshot(snap: {
+  coreKey: string;
+  occasion: Occasion;
+  garmentIds: string[];
+  title: string;
+  reason: string;
+  fitTips: string[];
+  primary: BodyType | null;
+}): Outfit | null {
+  const garments = snap.garmentIds.map((id) => GARMENTS.find((g) => g.id === id)).filter((g): g is Garment => !!g);
+  if (!garments.length) return null;
+  const result: ResultLike | null = snap.primary ? { classification: snap.primary, primary: snap.primary, secondary: null } : null;
+  const main = garments.filter((g) => g.slot !== "shoes" && g.slot !== "accessory");
+  return {
+    id: `saved-${snap.coreKey}-${snap.occasion}`,
+    coreKey: snap.coreKey,
+    title: snap.title,
+    occasion: snap.occasion,
+    concept: main.map((g) => g.name).join(" + "),
+    items: garments.map((g) => ({ garment: g, why: whyFor(g, result), matched: [] })),
+    effect: [...new Set(garments.slice(0, 3).map((g) => g.effect))].slice(0, 2).join(", "),
+    reason: snap.reason,
+    fitTips: snap.fitTips,
+    score: 0,
+    fromCloset: false,
+  };
 }

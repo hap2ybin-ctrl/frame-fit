@@ -5,11 +5,11 @@ import type { PhotoAnalysis } from "../analysis/analyzePhoto";
 import type { ClassificationResult, SelfAnswer } from "../classifier/types";
 import type { CapturedPhoto } from "../image/image";
 import type { CaptureView } from "../pose/quality";
-import type { StylePreferences } from "../styling/types";
 
 /**
- * 세션 상태 — sessionStorage(탭을 닫으면 삭제)에만 보관합니다.
+ * 분석 세션 상태 — sessionStorage(탭을 닫으면 삭제)에만 보관합니다.
  * 사진·좌표는 절대 서버로 전송하지 않으며, localStorage에도 저장하지 않습니다.
+ * 스타일 취향·옷장·코디북은 별도 모듈(lib/preferences)에서 관리합니다.
  */
 export interface SessionState {
   version: 1;
@@ -18,21 +18,11 @@ export interface SessionState {
   /** 몸에 붙는 옷을 입고 촬영했는지 (측면 윤곽 규칙 반영 여부) */
   fittedClothing: boolean;
   answers: SelfAnswer[];
-  prefs: StylePreferences;
-  closet: string[];
   result: ClassificationResult | null;
   resultAt: string | null;
 }
 
 const KEY = "framefit:session:v1";
-
-export const DEFAULT_PREFS: StylePreferences = {
-  line: "unisex",
-  occasions: ["casual"],
-  goals: [],
-  focus: [],
-  tastes: [],
-};
 
 export const EMPTY_SESSION: SessionState = Object.freeze({
   version: 1,
@@ -40,8 +30,6 @@ export const EMPTY_SESSION: SessionState = Object.freeze({
   analyses: {},
   fittedClothing: false,
   answers: [],
-  prefs: DEFAULT_PREFS,
-  closet: [],
   result: null,
   resultAt: null,
 }) as SessionState;
