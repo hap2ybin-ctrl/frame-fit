@@ -16,6 +16,44 @@ export const TYPE_LABEL: Record<BodyType, string> = {
   natural: "내추럴",
 };
 
+/** 마지막 글자에 받침이 있는지 (한글이 아니면 false) */
+function hasBatchim(word: string): boolean {
+  const code = word.charCodeAt(word.length - 1) - 0xac00;
+  return code >= 0 && code <= 11171 && code % 28 !== 0;
+}
+/** 받침에 맞는 조사 선택: josa("내추럴", "과", "와") → "내추럴과" */
+export function josa(word: string, withBatchim: string, withoutBatchim: string): string {
+  return word + (hasBatchim(word) ? withBatchim : withoutBatchim);
+}
+
+/** 두 유형 점수 차이가 이보다 작으면 동점으로 표시 */
+export const TIE_EPSILON = 0.05;
+
+export interface MixedLeaning {
+  /** 조금 더 가까운 유형. 동점이면 null */
+  closer: BodyType | null;
+  a: BodyType;
+  b: BodyType;
+  scoreA: number;
+  scoreB: number;
+  text: string;
+}
+
+/**
+ * 혼합형에서 두 유형 중 어느 쪽에 조금 더 가까운지 설명.
+ * 저장된 결과(점수만 있는 경우)에서도 쓸 수 있도록 점수만으로 계산합니다.
+ */
+export function describeMixed(scores: TypeScores, a: BodyType, b: BodyType): MixedLeaning {
+  const scoreA = scores[a];
+  const scoreB = scores[b];
+  const nums = `근거 점수 ${scoreA.toFixed(1)} vs ${scoreB.toFixed(1)}`;
+  if (Math.abs(scoreA - scoreB) < TIE_EPSILON) {
+    return { closer: null, a, b, scoreA, scoreB, text: `${josa(TYPE_LABEL[a], "과", "와")} ${TYPE_LABEL[b]}의 근거가 같아요. 어느 한쪽에 더 가깝다고 보기 어려워요. (${nums})` };
+  }
+  const closer = scoreA > scoreB ? a : b;
+  return { closer, a, b, scoreA, scoreB, text: `${TYPE_LABEL[closer]} 쪽에 조금 더 가까워요. (${nums})` };
+}
+
 const zero = (): TypeScores => ({ straight: 0, wave: 0, natural: 0 });
 
 function addScores(target: TypeScores, add: Partial<TypeScores>, k = 1) {
@@ -166,14 +204,16 @@ export function classify(input: ClassifierInput, config: ClassifierConfig = {}):
     reasons.push("유형별 근거가 전반적으로 약해 한 방향으로 정리하기 어려워요.");
   } else if (margin < d.mixedMarginRatio) {
     classification = "mixed";
-    reasons.push(`${TYPE_LABEL[top]}와(과) ${TYPE_LABEL[second]}의 근거가 비슷한 수준이에요.`);
+    reasons.push(`${josa(TYPE_LABEL[top], "과", "와")} ${TYPE_LABEL[second]}의 근거가 비슷한 수준이에요.`);
+    reasons.push(describeMixed(scores, top, second).text);
   } else if (conflict && margin < d.conflictMixedMarginRatio) {
     classification = "mixed";
     reasons.push("사진 기반 근거와 자가 체크 근거가 서로 다른 유형을 가리켜 혼합형으로 정리했어요.");
+    reasons.push(describeMixed(scores, top, second).text);
   } else {
     classification = top;
     reasons.push(`${TYPE_LABEL[top]} 쪽 근거가 가장 많이 모였어요.`);
-    if (scores[second] > 0) reasons.push(`두 번째로 가까운 경향은 ${TYPE_LABEL[second]}예요.`);
+    if (scores[second] > 0) reasons.push(`두 번째로 가까운 경향은 ${josa(TYPE_LABEL[second], "이에요", "예요")}.`);
   }
   if (secondary && scores[secondary] <= 0) secondary = null;
 

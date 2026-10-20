@@ -1,4 +1,5 @@
 import { CLASSIFICATION_LABEL, STRENGTH_LABEL, TYPE_META } from "../brand/typeMeta";
+import { describeMixed } from "../classifier/engine";
 import type { ClassificationResult } from "../classifier/types";
 import { BODY_TYPES } from "../classifier/types";
 
@@ -47,12 +48,18 @@ export async function renderResultPng(result: ClassificationResult, dateText: st
 
   ctx.font = font(500, 30);
   ctx.fillStyle = "#3A3D44";
+  const leaning =
+    result.classification === "mixed" && result.primary && result.secondary ? describeMixed(result.scores, result.primary, result.secondary) : null;
   const sub =
     result.classification === "inconclusive"
       ? "근거가 부족해 판정을 보류했어요"
-      : result.secondary
-        ? `두 번째로 가까운 경향 · ${TYPE_META[result.secondary].label}`
-        : "";
+      : leaning
+        ? leaning.closer
+          ? `${TYPE_META[leaning.closer].label} 쪽에 조금 더 가까워요`
+          : "두 유형의 근거가 같아요"
+        : result.secondary
+          ? `두 번째로 가까운 경향 · ${TYPE_META[result.secondary].label}`
+          : "";
   ctx.fillText(`${sub}${sub ? "  ·  " : ""}${STRENGTH_LABEL[result.strength]}`, 80, 470);
 
   // 점수 막대

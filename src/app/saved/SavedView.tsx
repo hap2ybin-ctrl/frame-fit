@@ -5,10 +5,18 @@ import { Trash2 } from "lucide-react";
 import { Notice } from "@/components/flow/Notice";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { CLASSIFICATION_LABEL, STRENGTH_LABEL, TYPE_META } from "@/lib/brand/typeMeta";
+import { describeMixed } from "@/lib/classifier/engine";
 import { OCCASION_LABEL } from "@/lib/styling/recommend";
-import { deleteAllSaved, deleteSaved, useSavedResults } from "@/lib/store/saved";
+import { deleteAllSaved, deleteSaved, useSavedResults, type SavedResult } from "@/lib/store/saved";
 import { clearSession, useHydrated, useSession } from "@/lib/store/session";
 import { cn } from "@/lib/utils";
+
+/** 혼합형 저장 결과: 어느 쪽에 더 가까운지 한 줄 요약 */
+function mixedNote(r: SavedResult): string {
+  if (r.classification !== "mixed" || !r.primary || !r.secondary) return "";
+  const l = describeMixed(r.scores, r.primary, r.secondary);
+  return l.closer ? ` · ${TYPE_META[l.closer].label} 쪽에 조금 더 가까움` : " · 두 유형 동점";
+}
 
 export function SavedView() {
   const saved = useSavedResults();
@@ -89,6 +97,7 @@ export function SavedView() {
                       <p className="mt-1 text-sm text-neutral-600">
                         {STRENGTH_LABEL[r.strength]}
                         {r.secondary && r.classification !== "mixed" && ` · 두 번째 ${TYPE_META[r.secondary].label}`}
+                        {mixedNote(r)}
                         {` · 상황 ${r.prefs.occasions.map((o) => OCCASION_LABEL[o]).join(", ")}`}
                       </p>
                     </div>

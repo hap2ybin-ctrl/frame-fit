@@ -1,6 +1,7 @@
 import { Camera, ClipboardCheck, GitCompareArrows } from "lucide-react";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { CLASSIFICATION_LABEL, STRENGTH_LABEL, TYPE_META } from "@/lib/brand/typeMeta";
+import { describeMixed, josa } from "@/lib/classifier/engine";
 import { BODY_TYPES, type ClassificationResult, type Evidence, type TypeScores } from "@/lib/classifier/types";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,7 @@ export function TypeHero({ result }: { result: ClassificationResult }) {
   const s = secondary ? TYPE_META[secondary] : null;
   const inconclusive = classification === "inconclusive";
   const mixed = classification === "mixed";
+  const leaning = mixed && primary && secondary ? describeMixed(result.scores, primary, secondary) : null;
 
   return (
     <div className={cn("relative overflow-hidden rounded-[2rem] p-7 sm:p-10", inconclusive || !p ? "bg-surface" : p.bgSoft)}>
@@ -25,7 +27,7 @@ export function TypeHero({ result }: { result: ClassificationResult }) {
             <h2 className="mt-4 text-5xl font-bold tracking-tight sm:text-6xl">판정 보류</h2>
             <p className="mt-4 max-w-xl leading-relaxed text-neutral-700">{result.reasons[0]}</p>
             {p && result.scores[p.key] > 0 && (
-              <p className="mt-2 text-sm text-neutral-500">참고로 현재까지 근거가 가장 많이 모인 쪽은 {p.label}이에요.</p>
+              <p className="mt-2 text-sm text-neutral-500">참고로 현재까지 근거가 가장 많이 모인 쪽은 {josa(p.label, "이에요", "예요")}.</p>
             )}
           </>
         ) : (
@@ -49,6 +51,7 @@ export function TypeHero({ result }: { result: ClassificationResult }) {
               {!mixed && s && <span className="text-neutral-500"> · 두 번째로 가까운 경향 {s.label}</span>}
             </p>
             <p className="mt-4 max-w-xl leading-relaxed text-neutral-700">{mixed ? result.reasons[0] : p?.summary}</p>
+            {leaning && <MixedLeaningBadge leaning={leaning} />}
           </>
         )}
         <div className="mt-6 flex flex-wrap gap-2 text-xs">
@@ -60,6 +63,23 @@ export function TypeHero({ result }: { result: ClassificationResult }) {
         </div>
       </div>
     </div>
+  );
+}
+
+export function MixedLeaningBadge({ leaning }: { leaning: ReturnType<typeof describeMixed> }) {
+  const dots = leaning.closer ? [leaning.closer] : [leaning.a, leaning.b];
+  return (
+    <p className="mt-4 inline-flex max-w-xl items-start gap-2.5 rounded-2xl bg-white/85 px-4 py-3 text-sm leading-relaxed ring-1 ring-black/5">
+      <span className="mt-1.5 flex shrink-0 -space-x-1" aria-hidden>
+        {dots.map((t) => (
+          <span key={t} className={cn("size-2.5 rounded-full ring-2 ring-white", TYPE_META[t].bg)} />
+        ))}
+      </span>
+      <span>
+        <span className="font-semibold">{leaning.closer ? "더 가까운 쪽" : "동점"}</span>
+        <span className="text-neutral-700"> · {leaning.text}</span>
+      </span>
+    </p>
   );
 }
 

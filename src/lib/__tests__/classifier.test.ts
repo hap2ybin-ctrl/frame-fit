@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { VisualFeature } from "../analysis/features";
-import { classify } from "../classifier/engine";
+import { classify, describeMixed, josa } from "../classifier/engine";
 import { QUESTIONS, UNKNOWN_OPTION_ID } from "../classifier/questions.config";
 import type { BodyType, QualitySummary, SelfAnswer } from "../classifier/types";
 
@@ -111,5 +111,51 @@ describe("classify", () => {
     const r = classify(input);
     expect(r.strength).toMatch(/strong|moderate|weak/);
     expect(r.rulesVersion).toContain("unvalidated");
+  });
+});
+
+describe("혼합형에서 더 가까운 쪽 표시", () => {
+  it("점수가 높은 쪽을 더 가까운 유형으로 표시", () => {
+    const l = describeMixed({ straight: 6.5, wave: 6.0, natural: 1 }, "straight", "wave");
+    expect(l.closer).toBe("straight");
+    expect(l.text).toContain("스트레이트 쪽에 조금 더 가까워요");
+    expect(l.text).toContain("6.5 vs 6.0");
+  });
+
+  it("순서와 관계없이 점수로 판단", () => {
+    expect(describeMixed({ straight: 4, wave: 7, natural: 0 }, "straight", "wave").closer).toBe("wave");
+  });
+
+  it("동점이면 어느 쪽도 더 가깝다고 하지 않음", () => {
+    const l = describeMixed({ straight: 0, wave: 5, natural: 5 }, "wave", "natural");
+    expect(l.closer).toBeNull();
+    expect(l.text).toContain("웨이브와 내추럴의 근거가 같아요");
+  });
+
+  it("엔진의 혼합형 결과 이유에 더 가까운 쪽이 포함됨", () => {
+    const a = answersFor("straight", 4);
+    const b = answersFor("wave").slice(4);
+    const r = classify({ visualFeatures: [], selfAssessment: [...a, ...b], quality: noPhoto });
+    expect(r.classification).toBe("mixed");
+    expect(r.reasons.some((x) => x.includes("더 가까워요") || x.includes("근거가 같아요"))).toBe(true);
+  });
+
+  it("동점인 혼합형은 동점으로 안내", () => {
+    // 스트레이트 2점 문항 2개 vs 웨이브 2점 문항 2개 → 4 vs 4
+    const pick = (qid: string, t: BodyType) => ({ questionId: qid, optionId: QUESTIONS.find((q) => q.id === qid)!.options.find((o) => (o.points[t] ?? 0) > 0)!.id });
+    const r = classify({
+      visualFeatures: [],
+      selfAssessment: [pick("torso-depth", "straight"), pick("collarbone", "straight"), pick("tissue", "wave"), pick("center", "wave")],
+      quality: noPhoto,
+    });
+    expect(r.classification).toBe("mixed");
+    expect(r.scores.straight).toBe(r.scores.wave);
+    expect(r.reasons.join(" ")).toContain("근거가 같아요");
+  });
+
+  it("조사 처리", () => {
+    expect(josa("내추럴", "과", "와")).toBe("내추럴과");
+    expect(josa("웨이브", "과", "와")).toBe("웨이브와");
+    expect(josa("스트레이트", "이에요", "예요")).toBe("스트레이트예요");
   });
 });
