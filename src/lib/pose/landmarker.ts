@@ -8,7 +8,7 @@ import type { PoseLandmarker } from "@mediapipe/tasks-vision";
  */
 
 export const TASKS_VISION_VERSION = "1.1.1";
-const WASM_LOCAL = "/mediapipe/wasm";
+const WASM_LOCAL = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/mediapipe/wasm`;
 const WASM_CDN = `https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@${TASKS_VISION_VERSION}/wasm`;
 
 export type ModelVariant = "lite" | "full";

@@ -29,6 +29,20 @@ npx next dev --experimental-https -H 0.0.0.0
 
 카메라가 없어도 **촬영 → 사진 업로드**로 전체 플로우(분석 → 체크 → 결과 → 스타일)를 진행할 수 있습니다. 사진을 쓰지 않고 자가 체크만 하는 경로도 있습니다.
 
+## GitHub Pages 배포
+
+```bash
+npm run deploy:pages   # 정적 빌드(out/) → gh-pages 브랜치에 강제 푸시
+```
+
+- `DEPLOY_TARGET=gh-pages`일 때만 정적 내보내기(`output: "export"`)로 빌드합니다. 이때 `basePath=/<저장소명>`과 `trailingSlash`를 적용하고, Cache Components·PPR과 응답 헤더 설정은 끕니다. 정적 내보내기에서는 이 둘을 지원하지 않습니다.
+- 그래서 Pages에서는 `Permissions-Policy` 헤더가 없습니다. 카메라는 HTTPS인 같은 사이트에서 그대로 동작합니다.
+- 배포본을 로컬에서 확인하려면 다음을 실행하고 `http://localhost:8090/frame-fit/`을 엽니다.
+
+```bash
+npm run build:pages && node scripts/serve-pages-preview.mjs
+```
+
 ## 기술 스택
 
 | 영역 | 사용 기술 |

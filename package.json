@@ -13,7 +13,9 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "build:pages": "DEPLOY_TARGET=gh-pages next build",
+    "deploy:pages": "bash scripts/deploy-gh-pages.sh"
   },
   "dependencies": {
     "@base-ui/react": "^1.9.0",
