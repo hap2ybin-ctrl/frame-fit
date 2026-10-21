@@ -152,6 +152,19 @@ scripts/copy-mediapipe-wasm.mjs
 - 취향 데이터(`lib/preferences`): 유형 기준, 스타일 선호, 옷장 체크, 코디북, 제외, 덜 추천, 선호 핏. 기본은 이 탭(sessionStorage)이고, '취향·코디북을 이 기기에 저장'을 켜면 localStorage(`framefit:prefs:v1`)에 보관합니다. 사진·좌표는 들어가지 않습니다.
 - '분석 결과 사용' 기준은 현재 세션 결과 → 저장한 최근 결과 요약 → 없음(선호 조건만) 순서로 정해집니다.
 
+## 코디 이미지
+
+- **의류 36종:** OpenAI `gpt-image-2`로 만든 상품컷 스타일 이미지입니다. 원본은 `public/garments/<id>.jpg`, 배경을 지운 누끼는 `public/garments/cutout/<id>.webp`에 있습니다.
+- **모델컷:** AI 기준 모델(`scripts/images/ref-{women,men}.jpg`)에 상의+하의(또는 원피스) 조합을 입힌 이미지로, `public/looks/<gender>__<coreKey>.webp`에 있습니다.
+  - 현재 여성 83/83, 남성 14/40이 들어가 있습니다. 모델컷이 없는 조합은 누끼 플랫레이만 보여 줍니다.
+  - 빠진 컷은 다음 명령으로 채웁니다. 이미 있는 컷은 건너뜁니다.
+
+```bash
+set -a && . ./.env.local && set +a && python3 scripts/images/generate-model-cuts.py
+```
+
+- 모든 이미지는 실제 판매 상품이나 실존 인물이 아니며, 화면에 'AI 생성 이미지'로 표시됩니다. API 키는 `.env.local`(Git 제외)에만 두세요.
+
 ## 개인정보
 
 - 영상, 사진, 좌표를 서버로 전송하지 않습니다. 네트워크 요청은 WASM·모델 파일 다운로드뿐입니다.

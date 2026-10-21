@@ -3,9 +3,10 @@ import { Bookmark, BookmarkCheck, Ruler, Sparkles, ThumbsDown, X } from "lucide-
 import type { BodyType } from "@/lib/classifier/types";
 import { TYPE_META } from "@/lib/brand/typeMeta";
 import { OCCASION_LABEL } from "@/lib/styling/recommend";
-import type { GarmentAttrs, Outfit } from "@/lib/styling/types";
+import type { GarmentAttrs, Outfit, StyleLine } from "@/lib/styling/types";
 import { cn } from "@/lib/utils";
-import { GarmentIcon, OutfitArt } from "./GarmentArt";
+import { GarmentVisual } from "./GarmentArt";
+import { LookSpread } from "./LookSpread";
 
 const ATTR_LABEL: Record<keyof GarmentAttrs, string> = {
   neckline: "넥라인",
@@ -27,16 +28,29 @@ export interface OutfitActions {
   fitLabHref?: string;
 }
 
-export function OutfitCard({ outfit, type, index, actions = {} }: { outfit: Outfit; type: BodyType | null; index: number; actions?: OutfitActions }) {
+export function OutfitCard({
+  outfit,
+  type,
+  index,
+  line = null,
+  actions = {},
+}: {
+  outfit: Outfit;
+  type: BodyType | null;
+  index: number;
+  /** 모델컷 성별 결정에 사용 (여성복/남성복/유니섹스) */
+  line?: StyleLine | null;
+  actions?: OutfitActions;
+}) {
   const meta = type ? TYPE_META[type] : null;
   return (
     <article className="flex flex-col overflow-hidden rounded-[1.75rem] ring-1 ring-black/5">
-      <div className={cn("relative px-6 pt-6", meta ? meta.bgSoft : "bg-surface")}>
-        <span className="absolute left-5 top-5 font-display text-xs font-semibold tabular text-neutral-500">
-          LOOK {String(index + 1).padStart(2, "0")}
-        </span>
-        <span className="absolute right-5 top-5 rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium">{OCCASION_LABEL[outfit.occasion]}</span>
-        <OutfitArt garments={outfit.items.map((i) => i.garment)} className="mx-auto h-56 w-auto" label={`${outfit.concept} 코디 도해`} />
+      <div className={cn("px-4 pb-4 pt-3", meta ? meta.bgSoft : "bg-surface")}>
+        <div className="mb-2 flex items-center justify-between px-1">
+          <span className="font-display text-xs font-semibold tabular text-neutral-500">LOOK {String(index + 1).padStart(2, "0")}</span>
+          <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium">{OCCASION_LABEL[outfit.occasion]}</span>
+        </div>
+        <LookSpread outfit={outfit} line={line} index={index} />
       </div>
       <div className="flex flex-1 flex-col gap-4 p-6">
         <div className="flex items-start justify-between gap-3">
@@ -115,7 +129,7 @@ export function OutfitCard({ outfit, type, index, actions = {} }: { outfit: Outf
               <li key={garment.id}>
                 <details className={cn("group rounded-2xl ring-1 ring-black/5 open:bg-surface/60", disliked && "opacity-60")}>
                   <summary className="flex cursor-pointer list-none items-center gap-3 p-3 [&::-webkit-details-marker]:hidden">
-                    <GarmentIcon garment={garment} className="size-10 shrink-0 rounded-xl bg-white p-1 ring-1 ring-black/5" />
+                    <GarmentVisual garment={garment} className="size-11 shrink-0 rounded-xl bg-white ring-1 ring-black/5" />
                     <span className="min-w-0 flex-1">
                       <span className="block text-sm font-medium">{garment.name}</span>
                       {(matched.length > 0 || disliked) && (

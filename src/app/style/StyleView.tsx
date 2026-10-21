@@ -5,7 +5,7 @@ import Link from "next/link";
 import { BookOpen, Columns3, Shirt, Sparkles, SwatchBook } from "lucide-react";
 import { Notice } from "@/components/flow/Notice";
 import { ChipGroup } from "@/components/style/ChipGroup";
-import { GarmentIcon } from "@/components/style/GarmentArt";
+import { GarmentVisual } from "@/components/style/GarmentArt";
 import { OutfitCard, type OutfitActions } from "@/components/style/OutfitCard";
 import { PersistToggle } from "@/components/style/PersistToggle";
 import { TypePicker } from "@/components/style/TypePicker";
@@ -157,7 +157,7 @@ export function StyleView() {
               )}
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {outfits.map((o, i) => (
-                  <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} />
+                  <OutfitCard key={o.id} outfit={o} type={cardType} index={i} line={prefs.line} actions={actionsFor(o)} />
                 ))}
               </div>
             </>
@@ -218,7 +218,7 @@ export function StyleView() {
           ) : (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {closetRec.outfits.map((o, i) => (
-                <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} />
+                <OutfitCard key={o.id} outfit={o} type={cardType} index={i} line={prefs.line} actions={actionsFor(o)} />
               ))}
             </div>
           )}
@@ -229,7 +229,7 @@ export function StyleView() {
               <ul className="mt-3 grid gap-3 sm:grid-cols-3">
                 {closetRec.suggestions.map((g) => (
                   <li key={g.id} className="flex gap-3 rounded-2xl p-4 ring-1 ring-black/5">
-                    <GarmentIcon garment={g} className="size-12 shrink-0 rounded-xl bg-surface p-1" />
+                    <GarmentVisual garment={g} className="size-12 shrink-0 rounded-xl bg-surface" />
                     <div className="text-sm">
                       <p className="font-medium">{g.name}</p>
                       <p className="mt-0.5 text-neutral-600">{g.effect}</p>

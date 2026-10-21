@@ -183,3 +183,52 @@ describe("Phase 2: 추천 고도화", () => {
     expect(outfitFromSnapshot({ coreKey: "x", occasion: "casual", garmentIds: ["nope"], title: "", reason: "", fitTips: [], primary: null })).toBeNull();
   });
 });
+
+describe("의복 이미지 목록", () => {
+  it("모든 의류에 이미지가 있음", async () => {
+    const { GARMENT_IMAGES } = await import("../styling/garmentImages.data");
+    for (const g of GARMENTS) expect(GARMENT_IMAGES[g.id]).toBeDefined();
+  });
+
+  it("목록의 모든 이미지 파일이 존재하고, 아이템 id가 카탈로그에 있음", async () => {
+    const { existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { GARMENT_IMAGES } = await import("../styling/garmentImages.data");
+    for (const [id, img] of Object.entries(GARMENT_IMAGES)) {
+      expect(GARMENTS.some((g) => g.id === id)).toBe(true);
+      expect(existsSync(join(process.cwd(), "public", img.file))).toBe(true);
+      if (img.kind === "photo") expect(img.credit?.url).toMatch(/^https:\/\//);
+    }
+  });
+});
+
+describe("모델컷", () => {
+  it("목록의 모든 모델컷 파일이 존재하고 키 형식이 올바름", async () => {
+    const { existsSync } = await import("node:fs");
+    const { join } = await import("node:path");
+    const { MODEL_CUT_KEYS } = await import("../styling/modelCuts.data");
+    expect(MODEL_CUT_KEYS.length).toBeGreaterThan(0);
+    for (const k of MODEL_CUT_KEYS) {
+      expect(k).toMatch(/^(women|men)__[a-z-]+(\+[a-z-]+)?$/);
+      const ids = k.split("__")[1].split("+");
+      for (const id of ids) expect(GARMENTS.some((g) => g.id === id)).toBe(true);
+      expect(existsSync(join(process.cwd(), "public", "looks", `${k}.webp`))).toBe(true);
+    }
+  });
+
+  it("여성복·남성복은 해당 성별 모델만, 없으면 모델컷 없이 표시", async () => {
+    const { modelCutSrc, modelGenderFor } = await import("../styling/modelCuts");
+    const { MODEL_CUT_KEYS } = await import("../styling/modelCuts.data");
+    const women = recommendOutfits({ result: null, prefs: { ...basePrefs, line: "women" } });
+    for (const [i, o] of women.entries()) {
+      const m = modelCutSrc(o, "women", i);
+      if (m) expect(m.gender).toBe("women");
+      expect(MODEL_CUT_KEYS.includes(`women__${o.coreKey}`)).toBe(!!m);
+    }
+    const fake = { coreKey: "no-such+combo", items: women[0].items };
+    expect(modelCutSrc(fake, "men", 0)).toBeNull();
+    // 여성 전용 아이템(스커트)이 있으면 유니섹스에서도 여성 모델
+    const skirt = GARMENTS.find((g) => g.id === "skirt-flare")!;
+    expect(modelGenderFor({ items: [{ garment: skirt, why: "", matched: [] }] }, "unisex", 1)).toBe("women");
+  });
+});

@@ -1,4 +1,6 @@
+import { GARMENT_IMAGES, garmentImageSrc } from "@/lib/styling/garmentImages.data";
 import type { Garment, GarmentShape } from "@/lib/styling/types";
+import { cn } from "@/lib/utils";
 
 /**
  * 자체 제작 의복 실루엣 SVG (100×100 좌표계). 실제 상품 이미지가 아닌 카테고리 일러스트입니다.
@@ -100,28 +102,22 @@ export function GarmentIcon({ garment, className }: { garment: Garment; classNam
   );
 }
 
-/** 코디 플랫레이 일러스트 */
-export function OutfitArt({ garments, className, label }: { garments: Garment[]; className?: string; label: string }) {
-  const by = (slot: Garment["slot"]) => garments.find((g) => g.slot === slot);
-  const top = by("top");
-  const bottom = by("bottom");
-  const dress = by("dress");
-  const outer = by("outer");
-  const shoes = by("shoes");
-  const acc = by("accessory");
+/**
+ * 의복 이미지: 사진(AI 생성 또는 라이선스 사진)이 있으면 사진, 없으면 SVG 일러스트.
+ */
+export function GarmentVisual({ garment, className, sizes }: { garment: Garment; className?: string; sizes?: string }) {
+  const src = garmentImageSrc(garment.id);
+  if (!src) return <GarmentIcon garment={garment} className={className} />;
+  const kind = GARMENT_IMAGES[garment.id]?.kind;
   return (
-    <svg viewBox="0 0 240 250" className={className} role="img" aria-label={label}>
-      {outer && <GarmentShapeSvg shape={outer.shape} color={outer.color} x={104} y={8} size={118} />}
-      {dress ? (
-        <GarmentShapeSvg shape={dress.shape} color={dress.color} x={14} y={10} size={150} />
-      ) : (
-        <>
-          {bottom && <GarmentShapeSvg shape={bottom.shape} color={bottom.color} x={30} y={112} size={128} />}
-          {top && <GarmentShapeSvg shape={top.shape} color={top.color} x={18} y={6} size={116} />}
-        </>
-      )}
-      {acc && <GarmentShapeSvg shape={acc.shape} color={acc.color} x={168} y={132} size={58} />}
-      {shoes && <GarmentShapeSvg shape={shoes.shape} color={shoes.color} x={156} y={176} size={74} />}
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element -- 정적 배포(GitHub Pages)에서 이미지 최적화 서버를 쓰지 않음
+    <img
+      src={src}
+      alt={`${garment.name} ${kind === "ai" ? "AI 생성 이미지" : "사진"}`}
+      loading="lazy"
+      decoding="async"
+      sizes={sizes}
+      className={cn("object-cover", className)}
+    />
   );
 }

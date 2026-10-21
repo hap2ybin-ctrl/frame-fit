@@ -4,6 +4,8 @@ import { NOT_OBSERVABLE } from "@/lib/analysis/features";
 import { DECISION, RULES_VERSION, VISUAL_RULES } from "@/lib/classifier/rules.config";
 import { QUESTIONS } from "@/lib/classifier/questions.config";
 import { TYPE_META } from "@/lib/brand/typeMeta";
+import { GARMENTS } from "@/lib/styling/garments.data";
+import { AI_IMAGE_SOURCE, GARMENT_IMAGES } from "@/lib/styling/garmentImages.data";
 
 export const metadata: Metadata = { title: "분석 방법과 한계" };
 
@@ -79,7 +81,19 @@ export default function AboutPage() {
           </ul>
         </section>
         <section>
-          <h2 className="text-xl font-bold text-ink">5. 구현 범위</h2>
+          <h2 className="text-xl font-bold text-ink">5. 코디 이미지 출처</h2>
+          <p className="mt-2">
+            코디 카드의 의복 이미지는 실제 판매 상품이 아닌 참고 이미지예요. 모든 이미지는 {AI_IMAGE_SOURCE} 이미지 모델로 생성한 상품컷 스타일
+            이미지이며, 사람·브랜드 로고·텍스트가 없는지 확인한 뒤 사용했어요. 실제 상품의 색감·소재와 다를 수 있어요.
+          </p>
+          <ul className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-sm sm:grid-cols-3">
+            {Object.keys(GARMENT_IMAGES).map((id) => (
+              <li key={id}>{GARMENTS.find((x) => x.id === id)?.name ?? id}</li>
+            ))}
+          </ul>
+        </section>
+        <section>
+          <h2 className="text-xl font-bold text-ink">6. 구현 범위</h2>
           <p className="mt-2">
             현재 버전은 실시간 포즈 추적, 사진 분석, 규칙 기반 경향 정리, 데이터 기반 코디 조합을 제공해요. 코디 실루엣 오버레이, 옷장 사진 등록,
             쇼핑 링크, 사진형·실시간 가상 착용(Virtual Try-On)은 아직 구현되지 않았어요.
