@@ -1,3 +1,4 @@
+import { EXTRA_GARMENTS } from "./garments.extra.data";
 import type { Garment } from "./types";
 
 /**
@@ -7,7 +8,7 @@ import type { Garment } from "./types";
  * - 어떤 유형에도 "금지" 아이템은 없습니다. 어울림 점수가 낮은 경우에도 why 필드에 입는 방법을 안내합니다.
  * - 브랜드·상품 정보가 아닌 일반 의복 카테고리입니다. (쇼핑 링크 연동은 향후 계획)
  */
-export const GARMENTS: Garment[] = [
+const BASE_GARMENTS: Garment[] = [
   // ── 상의 ───────────────────────────────────────────────────
   {
     id: "shirt-oxford",
@@ -107,7 +108,7 @@ export const GARMENTS: Garment[] = [
     slot: "top",
     lines: ["women", "men", "unisex"],
     affinity: { straight: 2, wave: 1, natural: 0.7 },
-    occasions: ["casual", "business", "date", "travel"],
+    occasions: ["casual", "business", "date", "travel", "formal"],
     goals: ["balance", "neat", "long"],
     focus: ["neck"],
     tastes: ["minimal", "classic"],
@@ -456,7 +457,7 @@ export const GARMENTS: Garment[] = [
     slot: "bottom",
     lines: ["women", "men", "unisex"],
     affinity: { straight: 0.6, wave: 0.8, natural: 2 },
-    occasions: ["casual", "business", "date", "travel"],
+    occasions: ["casual", "business", "date", "travel", "formal"],
     goals: ["balance", "volume", "long"],
     focus: ["legs"],
     tastes: ["casual", "street", "minimal"],
@@ -841,6 +842,9 @@ export const GARMENTS: Garment[] = [
   },
 ];
 
+/** 전체 카탈로그 = 기본 + 확장분 */
+export const GARMENTS: Garment[] = [...BASE_GARMENTS, ...EXTRA_GARMENTS];
+
 /** 옷장 체크 항목 (UI 표시 순서) */
 export const CLOSET_GROUPS: Array<{ label: string; items: Array<{ key: string; label: string }> }> = [
   {
@@ -855,6 +859,11 @@ export const CLOSET_GROUPS: Array<{ label: string; items: Array<{ key: string; l
       { key: "blouse", label: "블라우스" },
       { key: "turtleneck", label: "터틀넥" },
       { key: "polo", label: "폴로·니트 폴로" },
+      { key: "tee-stripe", label: "스트라이프 티셔츠" },
+      { key: "sweatshirt", label: "맨투맨" },
+      { key: "hoodie", label: "후드 티셔츠" },
+      { key: "shirt-denim", label: "데님 셔츠" },
+      { key: "knit-sleeveless", label: "민소매 니트" },
     ],
   },
   {
@@ -867,22 +876,39 @@ export const CLOSET_GROUPS: Array<{ label: string; items: Array<{ key: string; l
       { key: "trench", label: "트렌치 코트" },
       { key: "cardigan", label: "카디건" },
       { key: "blouson", label: "블루종·워크 재킷" },
+      { key: "jacket-denim", label: "데님 재킷" },
+      { key: "jacket-leather", label: "레더 재킷" },
+      { key: "jacket-suede", label: "스웨이드 재킷" },
+      { key: "jacket-shirt", label: "셔츠 재킷" },
+      { key: "padding", label: "패딩" },
+      { key: "cardigan-long", label: "롱 카디건" },
+      { key: "coat-wrap", label: "랩 코트" },
     ],
   },
   {
     label: "하의·원피스",
     items: [
       { key: "slacks", label: "슬랙스" },
-      { key: "jeans", label: "스트레이트 데님" },
+      { key: "jeans", label: "데님 팬츠" },
       { key: "pants-wide", label: "와이드 팬츠" },
       { key: "pants-tapered", label: "테이퍼드 팬츠" },
       { key: "chino", label: "치노 팬츠" },
+      { key: "cargo", label: "카고 팬츠" },
+      { key: "jogger", label: "조거 팬츠" },
+      { key: "pants-linen", label: "린넨 팬츠" },
+      { key: "shorts", label: "반바지" },
       { key: "skirt-pencil", label: "타이트 스커트" },
       { key: "skirt-flare", label: "플레어 스커트" },
       { key: "skirt-long", label: "롱 스커트" },
+      { key: "skirt-denim", label: "데님 스커트" },
+      { key: "skirt-mini", label: "미니 스커트" },
+      { key: "skirt-slip", label: "슬립 스커트" },
       { key: "dress-wrap", label: "랩 원피스" },
       { key: "dress-shirt", label: "셔츠 원피스" },
       { key: "dress-maxi", label: "맥시 원피스" },
+      { key: "dress-knit", label: "니트 원피스" },
+      { key: "dress-sleeveless", label: "민소매 원피스" },
+      { key: "dress-slip", label: "슬립 원피스" },
     ],
   },
   {
@@ -893,6 +919,8 @@ export const CLOSET_GROUPS: Array<{ label: string; items: Array<{ key: string; l
       { key: "pumps", label: "펌프스·플랫" },
       { key: "boots", label: "부츠" },
       { key: "derby", label: "더비 슈즈" },
+      { key: "sandals", label: "샌들·뮬" },
+      { key: "cap", label: "모자" },
       { key: "belt", label: "벨트" },
       { key: "bag", label: "가방" },
       { key: "scarf", label: "스카프·머플러" },

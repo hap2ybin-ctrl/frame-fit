@@ -1,15 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { BookOpen, Columns3, Shirt, Sparkles, SwatchBook } from "lucide-react";
+import { BookOpen, Columns3, RefreshCw, Shirt, Sparkles, SwatchBook } from "lucide-react";
 import { Notice } from "@/components/flow/Notice";
 import { ChipGroup } from "@/components/style/ChipGroup";
 import { GarmentVisual } from "@/components/style/GarmentArt";
 import { OutfitCard, type OutfitActions } from "@/components/style/OutfitCard";
 import { PersistToggle } from "@/components/style/PersistToggle";
 import { TypePicker } from "@/components/style/TypePicker";
-import { buttonVariants } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TYPE_META } from "@/lib/brand/typeMeta";
 import { fitLabHrefForOutfit } from "@/lib/fitlab/silhouette";
@@ -20,6 +20,7 @@ import {
   FIT_LABEL,
   FOCUS_LABEL,
   GOAL_LABEL,
+  lookRoundCount,
   OCCASION_LABEL,
   TASTE_LABEL,
   recommendFromCloset,
@@ -71,7 +72,12 @@ export function StyleView() {
     [pref.excludedOutfits, pref.dislikedGarments, pref.fitPreference],
   );
   const result = ctx.result;
-  const outfits = useMemo(() => recommendLooks({ result, prefs, feedback }), [result, prefs, feedback]);
+  // "다른 코디 보기" 회차: 조건(취향·유형)이 바뀌면 처음 묶음부터
+  const roundKey = `${JSON.stringify(prefs)}|${ctx.label}`;
+  const [rotation, setRotation] = useState({ key: roundKey, n: 0 });
+  const round = rotation.key === roundKey ? rotation.n : 0;
+  const roundCount = useMemo(() => lookRoundCount({ result, prefs, feedback }), [result, prefs, feedback]);
+  const outfits = useMemo(() => recommendLooks({ result, prefs, feedback, round }), [result, prefs, feedback, round]);
   const closetRec = useMemo(() => recommendFromCloset({ result, prefs, closet, feedback }), [result, prefs, closet, feedback]);
   const points = stylePointsFor(result);
 
@@ -160,6 +166,17 @@ export function StyleView() {
                   <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} />
                 ))}
               </div>
+              {roundCount > 1 && (
+                <div className="mt-6 flex flex-col items-center gap-1.5">
+                  <Button variant="outline" size="lg" className="rounded-full px-6" onClick={() => setRotation({ key: roundKey, n: (round + 1) % roundCount })}>
+                    <RefreshCw aria-hidden className="size-4" />
+                    다른 코디 보기
+                  </Button>
+                  <p className="text-xs text-neutral-500" aria-live="polite">
+                    {(round % roundCount) + 1} / {roundCount}
+                  </p>
+                </div>
+              )}
             </>
           )}
           {pref.excludedOutfits.length > 0 && (

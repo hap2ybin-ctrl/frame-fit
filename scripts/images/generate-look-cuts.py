@@ -18,7 +18,7 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 LOOKS = os.path.join(ROOT, "public", "looks")
 KEY = os.environ.get("OPENAI_API_KEY") or sys.exit("OPENAI_API_KEY 가 없습니다 (.env.local 을 로드하세요)")
 
-gsrc = open(os.path.join(ROOT, "src/lib/styling/garments.data.ts"), encoding="utf-8").read()
+gsrc = "".join(open(os.path.join(ROOT, f"src/lib/styling/{f}"), encoding="utf-8").read() for f in ("garments.data.ts", "garments.extra.data.ts"))
 SLOT = {b.split('"')[0]: re.search(r'slot: "([^"]+)"', b).group(1) for b in re.split(r'\n  \{\n    id: "', gsrc)[1:]}
 NAME = {b.split('"')[0]: re.search(r'name: "([^"]+)"', b).group(1) for b in re.split(r'\n  \{\n    id: "', gsrc)[1:]}
 
@@ -38,6 +38,7 @@ def role(gid):
         if gid.startswith("belt"): return "the belt worn at the waist"
         if gid.startswith("bag"): return "the bag held naturally in one hand"
         if gid.startswith("scarf"): return "the scarf draped around the neck"
+        if gid == "cap": return "the cap worn on the head"
         return "the accessory"
     return ROLE[s]
 

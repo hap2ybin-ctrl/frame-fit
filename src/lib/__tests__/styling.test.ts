@@ -213,7 +213,7 @@ describe("완성 룩 큐레이션", () => {
     const { existsSync } = await import("node:fs");
     const { join } = await import("node:path");
     const { CURATED_LOOKS } = await import("../styling/looks.data");
-    expect(CURATED_LOOKS.length).toBe(160);
+    expect(CURATED_LOOKS.length).toBe(320);
     for (const l of CURATED_LOOKS) {
       for (const id of l.garmentIds) {
         const g = GARMENTS.find((x) => x.id === id)!;
@@ -247,6 +247,47 @@ describe("완성 룩 큐레이션", () => {
     expect(lookBodyType({ classification: "mixed", primary: "wave", secondary: "natural" })).toBe("wave");
     expect(lookBodyType({ classification: "inconclusive", primary: "straight", secondary: null })).toBe("neutral");
     expect(lookBodyType(null)).toBe("neutral");
+  });
+
+  it("다양성: 같은 칸(성별·체형·상황) 안에서 상의·하의·원피스는 최대 2번, 메인 아이템은 성별 룩의 15% 이하", async () => {
+    const { CURATED_LOOKS } = await import("../styling/looks.data");
+    const cells = new Map<string, Map<string, number>>();
+    const perGender = new Map<string, Map<string, number>>();
+    for (const l of CURATED_LOOKS) {
+      const cell = cells.get(`${l.gender}/${l.bodyType}/${l.occasion}`) ?? new Map();
+      const total = perGender.get(l.gender) ?? new Map();
+      for (const id of l.garmentIds) {
+        const slot = GARMENTS.find((g) => g.id === id)!.slot;
+        if (slot === "top" || slot === "bottom" || slot === "dress") {
+          cell.set(id, (cell.get(id) ?? 0) + 1);
+          total.set(id, (total.get(id) ?? 0) + 1);
+        }
+      }
+      cells.set(`${l.gender}/${l.bodyType}/${l.occasion}`, cell);
+      perGender.set(l.gender, total);
+    }
+    expect(cells.size).toBe(40);
+    for (const cell of cells.values()) expect(Math.max(...cell.values())).toBeLessThanOrEqual(2);
+    for (const total of perGender.values()) expect(Math.max(...total.values())).toBeLessThanOrEqual(160 * 0.15);
+    // 카탈로그의 모든 아이템이 한 번 이상 쓰임
+    const used = new Set(CURATED_LOOKS.flatMap((l) => l.garmentIds));
+    for (const g of GARMENTS) expect(used.has(g.id)).toBe(true);
+  });
+
+  it("다른 코디 보기: 회차마다 다른 룩을 보여 주고 끝나면 처음으로 돌아감", async () => {
+    const { recommendLooks, lookRoundCount } = await import("../styling/recommend");
+    const r = { classification: "straight" as const, primary: "straight" as const, secondary: null };
+    const input = { result: r, prefs: { ...basePrefs, line: "men" as const, occasions: ["casual" as const] } };
+    const rounds = lookRoundCount(input);
+    expect(rounds).toBeGreaterThanOrEqual(3);
+    const seen = new Set<string>();
+    for (let round = 0; round < 3; round++) {
+      const outs = recommendLooks({ ...input, round });
+      expect(outs.length).toBe(3);
+      for (const o of outs) seen.add(o.look!.id);
+    }
+    expect(seen.size).toBe(9);
+    expect(recommendLooks({ ...input, round: rounds }).map((o) => o.id)).toEqual(recommendLooks(input).map((o) => o.id));
   });
 
   it("제외한 코디는 다시 나오지 않음", async () => {

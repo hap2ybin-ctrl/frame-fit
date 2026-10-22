@@ -483,8 +483,25 @@ function garmentsOf(look: CuratedLook): Garment[] {
  * - 같은 체형의 룩을 우선하고, 부족하면 다른 체형 룩으로 채웁니다.
  * - 효과·취향·선호 핏·덜 추천 아이템은 아이템 점수(scoreGarment)로, 제외한 코디는 coreKey로 반영합니다.
  * - 유니섹스는 모든 아이템이 유니섹스 라인인 룩을 우선합니다.
+ * - round: "다른 코디 보기"를 누른 횟수. 점수 순 목록에서 다음 묶음을 보여 주고, 끝까지 가면 처음으로 돌아갑니다.
  */
-export function recommendLooks(input: RecommendInput, minCount = 3, looks: CuratedLook[] = CURATED_LOOKS): Outfit[] {
+export function recommendLooks(input: RecommendInput & { round?: number }, minCount = 3, looks: CuratedLook[] = CURATED_LOOKS): Outfit[] {
+  return rankLooks(input, minCount, looks).flatMap(({ ranked, perOccasion }) => {
+    if (!ranked.length) return [];
+    const pages = Math.ceil(ranked.length / perOccasion);
+    const start = (((input.round ?? 0) % pages) * perOccasion) % ranked.length;
+    const n = Math.min(perOccasion, ranked.length);
+    return Array.from({ length: n }, (_, i) => ranked[(start + i) % ranked.length]);
+  });
+}
+
+/** 상황별로 "다른 코디 보기"로 넘겨 볼 수 있는 묶음 수 (가장 많은 상황 기준) */
+export function lookRoundCount(input: RecommendInput, minCount = 3, looks: CuratedLook[] = CURATED_LOOKS): number {
+  return Math.max(1, ...rankLooks(input, minCount, looks).map(({ ranked, perOccasion }) => Math.ceil(ranked.length / perOccasion)));
+}
+
+/** 상황별 후보 룩을 점수 순으로 정렬 (같은 상의+하의 조합은 가장 높은 것 하나만) */
+function rankLooks(input: RecommendInput, minCount: number, looks: CuratedLook[]): Array<{ ranked: Outfit[]; perOccasion: number }> {
   const prefs = input.prefs;
   const feedback = input.feedback ?? {};
   const weights = typeWeights(input.result);
@@ -496,8 +513,9 @@ export function recommendLooks(input: RecommendInput, minCount = 3, looks: Curat
   const perOccasion = Math.max(1, Math.ceil(minCount / occasions.length));
   const ctx = { result: input.result, prefs };
 
-  const outfits: Outfit[] = [];
+  const groups: Array<{ ranked: Outfit[]; perOccasion: number }> = [];
   for (const occasion of occasions) {
+    const outfits: Outfit[] = [];
     const scored = looks
       .filter((l) => l.occasion === occasion && genders.includes(l.gender) && !excluded.has(l.coreKey))
       .map((look) => {
@@ -513,12 +531,9 @@ export function recommendLooks(input: RecommendInput, minCount = 3, looks: Curat
       .sort((a, b) => b.score - a.score || a.look.id.localeCompare(b.look.id));
 
     const cores = new Set<string>();
-    let added = 0;
     for (const { look, sgs, score } of scored) {
-      if (added >= perOccasion) break;
       if (cores.has(look.coreKey)) continue;
       cores.add(look.coreKey);
-      added++;
       const main = sgs.filter((p) => p.garment.slot !== "shoes" && p.garment.slot !== "accessory");
       const lead = [...sgs].sort((a, b) => b.score - a.score)[0];
       outfits.push({
@@ -540,6 +555,7 @@ export function recommendLooks(input: RecommendInput, minCount = 3, looks: Curat
         look: { id: look.id, image: look.image, gender: look.gender, bodyType: look.bodyType },
       });
     }
+    groups.push({ ranked: outfits, perOccasion });
   }
-  return outfits;
+  return groups;
 }
