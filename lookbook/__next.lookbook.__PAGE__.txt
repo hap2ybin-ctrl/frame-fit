@@ -1,0 +1,31 @@
+2:"$Sreact.fragment"
+3:"/frame-fit/_next/static/chunks/27gjg8e11zukd.js"
+4:I[39756,["$3"],"default"]
+5:I[37457,["$3"],"default"]
+a:"/frame-fit/_next/static/chunks/1hf9e2n_o1tx7.js"
+b:"/frame-fit/_next/static/chunks/2h_i62a5t2tb_.js"
+c:"/frame-fit/_next/static/chunks/21payfheys990.js"
+d:"/frame-fit/_next/static/chunks/2v4nwn6ozsafa.js"
+e:I[95663,["$3","$a","$b","$c","$d"],"PageHeader"]
+f:I[95742,["$3","$a","$b","$c","$d"],"LookbookView"]
+10:I[97367,["$3"],"OutletBoundary"]
+11:"$Sreact.suspense"
+14:"ViewportBoundary"
+15:I[97367,["$3"],"$14"]
+16:"MetadataBoundary"
+17:I[97367,["$3"],"$16"]
+18:I[27201,["$3"],"IconMark"]
+7:X
+7:C
+8:X
+9:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$2","c",{"children":[[["$","$Le",null,{"eyebrow":"LOOKBOOK","title":"코디북과 취향 기록","description":"저장한 코디, 제외한 코디, 선호하는 핏과 스타일을 모아 보고 관리해요. 사진과 분석 좌표는 여기에 저장되지 않아요."}],["$","$Lf",null,{}]],[["$","script","script-0",{"src":"/frame-fit/_next/static/chunks/1hf9e2n_o1tx7.js","async":true}],["$","script","script-1",{"src":"/frame-fit/_next/static/chunks/2h_i62a5t2tb_.js","async":true}],["$","script","script-2",{"src":"/frame-fit/_next/static/chunks/21payfheys990.js","async":true}],["$","script","script-3",{"src":"/frame-fit/_next/static/chunks/2v4nwn6ozsafa.js","async":true}]],["$","$L10",null,{"children":["$","$11",null,{"name":"Next.MetadataOutlet","children":"$@12"}]}]]}],"p":"$@13","v":null,"s":"$8"}}]]
+1:[["children",{"s":"lookbook","h":64,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+0:{"t":{"t":{"s":"","h":16,"c":"$Q1"},"h":{"r":["$","$2","h",{"children":[null,["$","$L15",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#ffffff"}],["$","meta","3",{"name":"color-scheme","content":"light"}]]}],["$","$L17",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$11",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"코디북 · FRAME FIT"}],["$","meta","1",{"name":"description","content":"브라우저 안에서 전신 포즈를 추적해 신체 비율과 실루엣을 시각화하고, 자가 체크와 함께 골격 유형 경향과 맞춤 코디를 제안하는 참고용 스타일링 도구입니다."}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","link","3",{"rel":"icon","href":"/frame-fit/favicon.ico?favicon.117ezoe8m31dk.ico","sizes":"48x48","type":"image/x-icon"}],["$","$L18","4",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@19","v":null,"s":"$8"}},"a":"$@1a","u":"$@1b","b":"tSnlgb3eELUMBD_yioQY9"}
+12:null
+1b:true
+8:300
+8:C
+1a:0
+6:"$undefined"
+19:"$undefined"
+13:"$undefined"

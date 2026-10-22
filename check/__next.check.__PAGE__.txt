@@ -1,0 +1,30 @@
+2:"$Sreact.fragment"
+3:"/frame-fit/_next/static/chunks/27gjg8e11zukd.js"
+4:I[39756,["$3"],"default"]
+5:I[37457,["$3"],"default"]
+a:"/frame-fit/_next/static/chunks/1vrlf1abazlkj.js"
+b:"/frame-fit/_next/static/chunks/2h_i62a5t2tb_.js"
+c:I[95663,["$3","$a","$b"],"StepNav"]
+d:I[95663,["$3","$a","$b"],"PageHeader"]
+e:I[61807,["$3","$a","$b"],"CheckView"]
+f:I[97367,["$3"],"OutletBoundary"]
+10:"$Sreact.suspense"
+13:"ViewportBoundary"
+14:I[97367,["$3"],"$13"]
+15:"MetadataBoundary"
+16:I[97367,["$3"],"$15"]
+17:I[27201,["$3"],"IconMark"]
+7:X
+7:C
+8:X
+9:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$2","c",{"children":[[["$","$Lc",null,{}],["$","$Ld",null,{"eyebrow":"STEP 04 · SELF CHECK","title":"사진으로 알 수 없는 특징을 직접 체크해요","description":"거울을 보거나 손으로 만져 보며 가장 가까운 느낌을 골라 주세요. 정답은 없어요. 확실하지 않으면 '잘 모르겠어요'를 선택하면 점수에 반영하지 않아요."}],["$","$Le",null,{}]],[["$","script","script-0",{"src":"/frame-fit/_next/static/chunks/1vrlf1abazlkj.js","async":true}],["$","script","script-1",{"src":"/frame-fit/_next/static/chunks/2h_i62a5t2tb_.js","async":true}]],["$","$Lf",null,{"children":["$","$10",null,{"name":"Next.MetadataOutlet","children":"$@11"}]}]]}],"p":"$@12","v":null,"s":"$8"}}]]
+1:[["children",{"s":"check","h":64,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+0:{"t":{"t":{"s":"","h":16,"c":"$Q1"},"h":{"r":["$","$2","h",{"children":[null,["$","$L14",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#ffffff"}],["$","meta","3",{"name":"color-scheme","content":"light"}]]}],["$","$L16",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$10",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"보완 체크 · FRAME FIT"}],["$","meta","1",{"name":"description","content":"브라우저 안에서 전신 포즈를 추적해 신체 비율과 실루엣을 시각화하고, 자가 체크와 함께 골격 유형 경향과 맞춤 코디를 제안하는 참고용 스타일링 도구입니다."}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","link","3",{"rel":"icon","href":"/frame-fit/favicon.ico?favicon.117ezoe8m31dk.ico","sizes":"48x48","type":"image/x-icon"}],["$","$L17","4",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@18","v":null,"s":"$8"}},"a":"$@19","u":"$@1a","b":"tSnlgb3eELUMBD_yioQY9"}
+11:null
+1a:true
+8:300
+8:C
+19:0
+6:"$undefined"
+18:"$undefined"
+12:"$undefined"

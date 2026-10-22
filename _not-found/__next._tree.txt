@@ -1,0 +1,5 @@
+:HL["/frame-fit/_next/static/chunks/0t-__l9i_2u-u.css","style"]
+:HL["/frame-fit/_next/static/chunks/3_aq99990j10z.css","style"]
+2:[["children",{"s":"__PAGE__","h":160}]]
+1:[["children",{"s":"/_not-found","h":64,"c":"$Q2"}]]
+0:{"b":"tSnlgb3eELUMBD_yioQY9","t":{"t":{"s":"","h":16,"c":"$Q1"}}}

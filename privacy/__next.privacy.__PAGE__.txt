@@ -1,0 +1,27 @@
+2:"$Sreact.fragment"
+3:"/frame-fit/_next/static/chunks/27gjg8e11zukd.js"
+4:I[39756,["$3"],"default"]
+5:I[37457,["$3"],"default"]
+a:"/frame-fit/_next/static/chunks/2erxvfl3hehjh.js"
+b:I[95663,["$3","$a"],"PageHeader"]
+c:I[97367,["$3"],"OutletBoundary"]
+d:"$Sreact.suspense"
+10:"ViewportBoundary"
+11:I[97367,["$3"],"$10"]
+12:"MetadataBoundary"
+13:I[97367,["$3"],"$12"]
+14:I[27201,["$3"],"IconMark"]
+7:X
+7:C
+8:X
+9:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$2","c",{"children":[[["$","$Lb",null,{"eyebrow":"PRIVACY","title":"개인정보와 데이터 처리","description":"FRAME FIT은 로그인이 필요 없고, 신체 사진과 영상을 서버로 보내지 않아요."}],["$","div",null,{"className":"mx-auto w-full max-w-4xl space-y-10 px-5 text-[15px] leading-relaxed text-neutral-700 sm:px-8","children":[["$","div",null,{"className":"overflow-x-auto rounded-3xl ring-1 ring-black/5","children":["$","table",null,{"className":"w-full min-w-[560px] text-left text-sm","children":[["$","thead",null,{"className":"bg-surface text-neutral-500","children":["$","tr",null,{"children":[["$","th",null,{"scope":"col","className":"p-4 font-medium","children":"데이터"}],["$","th",null,{"scope":"col","className":"p-4 font-medium","children":"보관 위치"}],["$","th",null,{"scope":"col","className":"p-4 font-medium","children":"보관 기간"}],["$","th",null,{"scope":"col","className":"p-4 font-medium","children":"외부 전송"}]]}]}],["$","tbody",null,{"className":"divide-y divide-black/5","children":[["$","tr","카메라 영상",{"children":[["$","th",null,{"scope":"row","className":"p-4 font-medium text-ink","children":"카메라 영상"}],["$","td",null,{"className":"p-4","children":"브라우저 메모리"}],["$","td",null,{"className":"p-4","children":"프레임 단위로 처리 후 즉시 폐기"}],["$","td",null,{"className":"p-4","children":"전송 안 함"}]]}],["$","tr","촬영·업로드 사진",{"children":[["$","th",null,{"scope":"row","className":"p-4 font-medium text-ink","children":"촬영·업로드 사진"}],["$","td",null,{"className":"p-4","children":"sessionStorage (이 탭)"}],["$","td",null,{"className":"p-4","children":"탭을 닫거나 직접 지울 때까지"}],["$","td",null,{"className":"p-4","children":"전송 안 함"}]]}],["$","tr","관절 좌표·측정 비율",{"children":[["$","th",null,{"scope":"row","className":"p-4 font-medium text-ink","children":"관절 좌표·측정 비율"}],["$","td",null,{"className":"p-4","children":"sessionStorage (이 탭)"}],["$","td",null,{"className":"p-4","children":"탭을 닫거나 직접 지울 때까지"}],["$","td",null,{"className":"p-4","children":"전송 안 함"}]]}],["$","tr","자가 체크 응답·결과",{"children":[["$","th",null,{"scope":"row","className":"p-4 font-medium text-ink","children":"자가 체크 응답·결과"}],["$","td",null,{"className":"p-4","children":"sessionStorage (이 탭)"}],["$","td",null,{"className":"p-4","children":"탭을 닫거나 직접 지울 때까지"}],["$","td",null,{"className":"p-4","children":"전송 안 함"}]]}],["$","tr","저장한 결과 요약",{"children":[["$","th",null,{"scope":"row","className":"p-4 font-medium text-ink","children":"저장한 결과 요약"}],["$","td",null,{"className":"p-4","children":"localStorage (이 브라우저)"}],["$","td",null,{"className":"p-4","children":"동의 후 저장, '내 결과'에서 삭제"}],["$","td",null,{"className":"p-4","children":"전송 안 함"}]]}]]}]]}]}],["$","section",null,{"children":[["$","h2",null,{"className":"text-lg font-semibold text-ink","children":"네트워크 요청"}],["$","p",null,{"className":"mt-2","children":"포즈 분석을 위해 MediaPipe 분석 엔진(WASM)과 포즈 인식 모델 파일을 내려받아요. 모델 파일은 Google의 공식 모델 저장소에서 제공되며, 이때 일반적인 웹 요청처럼 IP 주소 등 접속 정보가 해당 서버에 전달될 수 있어요. 사진·영상·좌표는 포함되지 않아요. 자체 서버에 모델을 호스팅하려면 README의 환경 변수 설정을 참고하세요."}]]}],["$","section",null,{"children":[["$","h2",null,{"className":"text-lg font-semibold text-ink","children":"다른 사람을 촬영할 때"}],["$","p",null,{"className":"mt-2","children":"신체 사진은 민감할 수 있는 정보예요. 다른 사람을 촬영하거나 사진을 분석할 때는 반드시 본인의 동의를 받고, 결과를 공유할 때도 동의를 구해 주세요. 미성년자 촬영은 보호자의 동의가 필요해요."}]]}],["$","section",null,{"children":[["$","h2",null,{"className":"text-lg font-semibold text-ink","children":"표현 원칙"}],["$","p",null,{"className":"mt-2","children":"결과는 외모를 평가하지 않으며, 체형의 좋고 나쁨을 말하지 않아요. 골격 유형은 스타일링을 위한 참고 분류이고, 의학적·전문적 진단이 아니에요."}]]}]]}]],[["$","script","script-0",{"src":"/frame-fit/_next/static/chunks/2erxvfl3hehjh.js","async":true}]],["$","$Lc",null,{"children":["$","$d",null,{"name":"Next.MetadataOutlet","children":"$@e"}]}]]}],"p":"$@f","v":null,"s":"$8"}}]]
+1:[["children",{"s":"privacy","h":64,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+0:{"t":{"t":{"s":"","h":16,"c":"$Q1"},"h":{"r":["$","$2","h",{"children":[null,["$","$L11",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#ffffff"}],["$","meta","3",{"name":"color-scheme","content":"light"}]]}],["$","$L13",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$d",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"개인정보와 데이터 · FRAME FIT"}],["$","meta","1",{"name":"description","content":"브라우저 안에서 전신 포즈를 추적해 신체 비율과 실루엣을 시각화하고, 자가 체크와 함께 골격 유형 경향과 맞춤 코디를 제안하는 참고용 스타일링 도구입니다."}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","link","3",{"rel":"icon","href":"/frame-fit/favicon.ico?favicon.117ezoe8m31dk.ico","sizes":"48x48","type":"image/x-icon"}],["$","$L14","4",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@15","v":null,"s":"$8"}},"a":"$@16","u":"$@17","b":"tSnlgb3eELUMBD_yioQY9"}
+e:null
+17:true
+8:300
+8:C
+16:0
+6:"$undefined"
+15:"$undefined"
+f:"$undefined"
