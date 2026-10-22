@@ -113,6 +113,8 @@ export interface Outfit {
   score: number;
   /** 옷장 기반 조합이면 true */
   fromCloset: boolean;
+  /** 완성 룩 큐레이션에서 온 코디면 모델컷 이미지 키와 모델 체형 */
+  look?: { id: string; image: string; gender: "women" | "men"; bodyType: BodyType | "neutral" };
   /** 옷장 조합에서 추가하면 좋은 아이템 */
   missing?: Garment[];
 }

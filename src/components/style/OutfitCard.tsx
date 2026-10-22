@@ -3,7 +3,7 @@ import { Bookmark, BookmarkCheck, Ruler, Sparkles, ThumbsDown, X } from "lucide-
 import type { BodyType } from "@/lib/classifier/types";
 import { TYPE_META } from "@/lib/brand/typeMeta";
 import { OCCASION_LABEL } from "@/lib/styling/recommend";
-import type { GarmentAttrs, Outfit, StyleLine } from "@/lib/styling/types";
+import type { GarmentAttrs, Outfit } from "@/lib/styling/types";
 import { cn } from "@/lib/utils";
 import { GarmentVisual } from "./GarmentArt";
 import { LookSpread } from "./LookSpread";
@@ -32,14 +32,11 @@ export function OutfitCard({
   outfit,
   type,
   index,
-  line = null,
   actions = {},
 }: {
   outfit: Outfit;
   type: BodyType | null;
   index: number;
-  /** 모델컷 성별 결정에 사용 (여성복/남성복/유니섹스) */
-  line?: StyleLine | null;
   actions?: OutfitActions;
 }) {
   const meta = type ? TYPE_META[type] : null;
@@ -50,7 +47,7 @@ export function OutfitCard({
           <span className="font-display text-xs font-semibold tabular text-neutral-500">LOOK {String(index + 1).padStart(2, "0")}</span>
           <span className="rounded-full bg-white/80 px-2.5 py-0.5 text-xs font-medium">{OCCASION_LABEL[outfit.occasion]}</span>
         </div>
-        <LookSpread outfit={outfit} line={line} index={index} />
+        <LookSpread outfit={outfit} />
       </div>
       <div className="flex flex-1 flex-col gap-4 p-6">
         <div className="flex items-start justify-between gap-3">

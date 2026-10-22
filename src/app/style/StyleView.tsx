@@ -23,7 +23,7 @@ import {
   OCCASION_LABEL,
   TASTE_LABEL,
   recommendFromCloset,
-  recommendOutfits,
+  recommendLooks,
   resolveTypeContext,
   stylePointsFor,
 } from "@/lib/styling/recommend";
@@ -71,7 +71,7 @@ export function StyleView() {
     [pref.excludedOutfits, pref.dislikedGarments, pref.fitPreference],
   );
   const result = ctx.result;
-  const outfits = useMemo(() => recommendOutfits({ result, prefs, feedback }), [result, prefs, feedback]);
+  const outfits = useMemo(() => recommendLooks({ result, prefs, feedback }), [result, prefs, feedback]);
   const closetRec = useMemo(() => recommendFromCloset({ result, prefs, closet, feedback }), [result, prefs, closet, feedback]);
   const points = stylePointsFor(result);
 
@@ -157,7 +157,7 @@ export function StyleView() {
               )}
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {outfits.map((o, i) => (
-                  <OutfitCard key={o.id} outfit={o} type={cardType} index={i} line={prefs.line} actions={actionsFor(o)} />
+                  <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} />
                 ))}
               </div>
             </>
@@ -218,7 +218,7 @@ export function StyleView() {
           ) : (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {closetRec.outfits.map((o, i) => (
-                <OutfitCard key={o.id} outfit={o} type={cardType} index={i} line={prefs.line} actions={actionsFor(o)} />
+                <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} />
               ))}
             </div>
           )}

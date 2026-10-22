@@ -1,7 +1,7 @@
 import { garmentCutoutSrc } from "@/lib/styling/garmentImages.data";
-import { modelCutSrc } from "@/lib/styling/modelCuts";
 import { flatLayLayout, type BoardShape, type Box } from "@/lib/styling/flatLayLayout";
-import type { Garment, Outfit, StyleLine } from "@/lib/styling/types";
+import { TYPE_META } from "@/lib/brand/typeMeta";
+import type { Garment, Outfit } from "@/lib/styling/types";
 import { cn } from "@/lib/utils";
 import { GarmentIcon } from "./GarmentArt";
 
@@ -56,35 +56,37 @@ export function FlatLayBoard({
 }
 
 /**
- * 스타일링 북 스프레드: 왼쪽 모델컷 + 오른쪽 누끼 플랫레이.
- * 모델컷이 없는 조합이면 플랫레이만 넓게 보여 줌.
+ * 스타일링 북 스프레드: 왼쪽 모델컷(체형별 AI 모델이 제안 아이템 전부를 입은 모습) + 오른쪽 누끼 플랫레이.
+ * 완성 룩이 아닌 코디(옷장 조합 등)는 플랫레이만 넓게 보여 줌.
  */
-export function LookSpread({ outfit, line, index }: { outfit: Outfit; line: StyleLine | null; index: number }) {
+export function LookSpread({ outfit }: { outfit: Outfit }) {
   const garments = outfit.items.map((i) => i.garment);
-  const model = modelCutSrc(outfit, line, index);
+  const look = outfit.look;
+  const src = look ? `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/looks/${look.image}.webp` : null;
+  const bodyLabel = look && look.bodyType !== "neutral" ? `${TYPE_META[look.bodyType].label} 경향` : "유형 기준 없음";
   return (
     <div>
-      <div className={cn("grid h-72 gap-2 sm:h-80", model ? "grid-cols-[1fr_1.15fr]" : "grid-cols-1")}>
-        {model && (
+      <div className={cn("grid h-72 gap-2 sm:h-80", src ? "grid-cols-[1fr_1.15fr]" : "grid-cols-1")}>
+        {src && look && (
           <figure className="relative overflow-hidden rounded-2xl bg-[#EFECE6]">
             {/* eslint-disable-next-line @next/next/no-img-element -- 정적 배포에서 이미지 최적화 서버를 쓰지 않음 */}
             <img
-              src={model.src}
-              alt={`AI 생성 ${model.gender === "women" ? "여성" : "남성"} 모델이 ${outfit.concept} 조합을 입은 모습`}
+              src={src}
+              alt={`${bodyLabel} 체형의 AI ${look.gender === "women" ? "여성" : "남성"} 모델이 ${outfit.concept} 코디를 입은 모습`}
               loading="lazy"
               decoding="async"
               className="h-full w-full object-cover object-top"
             />
             <figcaption className="absolute bottom-2 left-2 rounded-full bg-white/85 px-2 py-0.5 text-[10px] font-medium text-neutral-700">
-              AI 모델
+              AI 모델 · {bodyLabel}
             </figcaption>
           </figure>
         )}
-        <FlatLayBoard garments={garments} shape={model ? "tall" : "wide"} className="h-full" label={`${outfit.concept} 코디 플랫레이`} />
+        <FlatLayBoard garments={garments} shape={src ? "tall" : "wide"} className="h-full" label={`${outfit.concept} 코디 플랫레이`} />
       </div>
       <p className="mt-2 px-1 text-[11px] leading-snug text-neutral-500">
         AI 생성 이미지 · 실제 판매 상품이 아니에요
-        {model && " · 모델컷은 상의·하의 조합 참고용이며 특정 체형을 대표하지 않아요"}
+        {src && " · 모델 체형은 유형 경향을 보여 주는 예시이며 실제 개인과 다를 수 있어요"}
       </p>
     </div>
   );

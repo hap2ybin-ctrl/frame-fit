@@ -18,6 +18,8 @@ export interface SavedOutfit {
   primary: BodyType | null;
   typeLabel: string;
   savedAt: string;
+  /** 완성 룩이면 모델컷 정보 */
+  look?: Outfit["look"];
 }
 
 export interface ExcludedOutfit {
@@ -118,6 +120,7 @@ export function toggleSavedOutfit(
     primary: ctx.primary,
     typeLabel: ctx.typeLabel,
     savedAt: now,
+    ...(outfit.look ? { look: outfit.look } : {}),
   };
   return touch({ ...state, lookbook: [entry, ...state.lookbook].slice(0, LOOKBOOK_LIMIT) }, now);
 }

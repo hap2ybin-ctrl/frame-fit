@@ -2,6 +2,7 @@ import { TYPE_LABEL } from "../classifier/engine";
 import { BODY_TYPES, type BodyType, type Classification, type TypeScores } from "../classifier/types";
 import { FIT_TIPS, GOAL_TIPS } from "./fitGuide.data";
 import { GARMENTS } from "./garments.data";
+import { CURATED_LOOKS, type CuratedLook } from "./looks.data";
 import { NEUTRAL_POINTS, STYLE_POINTS } from "./stylePoints.data";
 import type {
   FitClass,
@@ -235,7 +236,7 @@ function pickCore(ctx: BuildContext, occasion: Occasion, chosen: Set<string>): {
 }
 
 /** 코디 전체의 추천 이유 */
-function outfitReason(ctx: BuildContext, occasion: Occasion, mainNames: string[]): string {
+function outfitReason(ctx: Pick<BuildContext, "result" | "prefs">, occasion: Occasion, mainNames: string[]): string {
   const r = ctx.result;
   const typeText =
     r?.primary && r.classification !== "inconclusive"
@@ -435,6 +436,7 @@ export function outfitFromSnapshot(snap: {
   reason: string;
   fitTips: string[];
   primary: BodyType | null;
+  look?: Outfit["look"];
 }): Outfit | null {
   const garments = snap.garmentIds.map((id) => GARMENTS.find((g) => g.id === id)).filter((g): g is Garment => !!g);
   if (!garments.length) return null;
@@ -452,5 +454,92 @@ export function outfitFromSnapshot(snap: {
     fitTips: snap.fitTips,
     score: 0,
     fromCloset: false,
+    ...(snap.look ? { look: snap.look } : {}),
   };
+}
+
+// ── 완성 룩 큐레이션 추천 ──────────────────────────────────────
+
+/** 추천 기준 유형에 맞는 모델 체형: 혼합형은 더 가까운(1순위) 유형, 판정 보류·없음은 유형 없음 모델 */
+export function lookBodyType(result: ResultLike | null): BodyType | "neutral" {
+  if (!result?.primary || result.classification === "inconclusive") return "neutral";
+  return result.primary;
+}
+
+/** 룩 체형 일치 가산점 — 검증되지 않은 초기값 */
+export const LOOK_WEIGHTS = { sameBody: 3, secondaryBody: 1.5, neutralBody: 0.5 } as const;
+
+function lookGenders(line: StylePreferences["line"]): Array<"women" | "men"> {
+  return line === "men" ? ["men"] : line === "women" ? ["women"] : ["women", "men"];
+}
+
+function garmentsOf(look: CuratedLook): Garment[] {
+  return look.garmentIds.map((id) => GARMENTS.find((g) => g.id === id)).filter((g): g is Garment => !!g);
+}
+
+/**
+ * 완성 룩 중에서 조건에 맞는 룩을 골라 코디로 제안합니다.
+ * 모든 룩에는 체형별 AI 모델이 아이템 전부(아우터·신발·소품 포함)를 입은 모델컷이 있습니다.
+ * - 같은 체형의 룩을 우선하고, 부족하면 다른 체형 룩으로 채웁니다.
+ * - 효과·취향·선호 핏·덜 추천 아이템은 아이템 점수(scoreGarment)로, 제외한 코디는 coreKey로 반영합니다.
+ * - 유니섹스는 모든 아이템이 유니섹스 라인인 룩을 우선합니다.
+ */
+export function recommendLooks(input: RecommendInput, minCount = 3, looks: CuratedLook[] = CURATED_LOOKS): Outfit[] {
+  const prefs = input.prefs;
+  const feedback = input.feedback ?? {};
+  const weights = typeWeights(input.result);
+  const body = lookBodyType(input.result);
+  const secondary = input.result?.classification === "mixed" ? input.result.secondary : null;
+  const occasions: Occasion[] = prefs.occasions.length ? prefs.occasions : ["casual"];
+  const genders = lookGenders(prefs.line);
+  const excluded = new Set(feedback.excludedCores ?? []);
+  const perOccasion = Math.max(1, Math.ceil(minCount / occasions.length));
+  const ctx = { result: input.result, prefs };
+
+  const outfits: Outfit[] = [];
+  for (const occasion of occasions) {
+    const scored = looks
+      .filter((l) => l.occasion === occasion && genders.includes(l.gender) && !excluded.has(l.coreKey))
+      .map((look) => {
+        const garments = garmentsOf(look);
+        const sgs = garments.map((g) => scoreGarment(g, weights, prefs, feedback));
+        let score = sgs.reduce((a, b) => a + b.score, 0) / Math.max(sgs.length, 1);
+        if (look.bodyType === body) score += LOOK_WEIGHTS.sameBody;
+        else if (secondary && look.bodyType === secondary) score += LOOK_WEIGHTS.secondaryBody;
+        else if (look.bodyType === "neutral") score += LOOK_WEIGHTS.neutralBody;
+        if (prefs.line === "unisex" && garments.every((g) => g.lines.includes("unisex"))) score += 1;
+        return { look, sgs, score };
+      })
+      .sort((a, b) => b.score - a.score || a.look.id.localeCompare(b.look.id));
+
+    const cores = new Set<string>();
+    let added = 0;
+    for (const { look, sgs, score } of scored) {
+      if (added >= perOccasion) break;
+      if (cores.has(look.coreKey)) continue;
+      cores.add(look.coreKey);
+      added++;
+      const main = sgs.filter((p) => p.garment.slot !== "shoes" && p.garment.slot !== "accessory");
+      const lead = [...sgs].sort((a, b) => b.score - a.score)[0];
+      outfits.push({
+        id: `look-${look.id}`,
+        coreKey: look.coreKey,
+        title: `${OCCASION_LABEL[occasion]} · ${lead.garment.effect}`,
+        occasion,
+        concept: main.map((p) => p.garment.name).join(" + "),
+        items: sgs.map((p) => toItem(p, input.result)),
+        effect: [...new Set(sgs.slice(0, 3).map((p) => p.garment.effect))].slice(0, 2).join(", "),
+        reason: outfitReason(ctx, occasion, main.map((p) => p.garment.name)),
+        fitTips: fitTipsFor(
+          input.result,
+          sgs.map((p) => p.garment.slot),
+          prefs.goals,
+        ),
+        score: Math.round(score * 100) / 100,
+        fromCloset: false,
+        look: { id: look.id, image: look.image, gender: look.gender, bodyType: look.bodyType },
+      });
+    }
+  }
+  return outfits;
 }

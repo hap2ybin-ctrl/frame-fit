@@ -202,33 +202,59 @@ describe("의복 이미지 목록", () => {
   });
 });
 
-describe("모델컷", () => {
-  it("목록의 모든 모델컷 파일이 존재하고 키 형식이 올바름", async () => {
+describe("완성 룩 큐레이션", () => {
+  const ctxs = [
+    null,
+    ...(["straight", "wave", "natural"] as const).map((t) => ({ classification: t, primary: t, secondary: null })),
+    { classification: "mixed" as const, primary: "wave" as const, secondary: "natural" as const },
+  ];
+
+  it("룩 데이터: 아이템·성별 라인·상황이 일관되고 모델컷 파일이 있음", async () => {
     const { existsSync } = await import("node:fs");
     const { join } = await import("node:path");
-    const { MODEL_CUT_KEYS } = await import("../styling/modelCuts.data");
-    expect(MODEL_CUT_KEYS.length).toBeGreaterThan(0);
-    for (const k of MODEL_CUT_KEYS) {
-      expect(k).toMatch(/^(women|men)__[a-z-]+(\+[a-z-]+)?$/);
-      const ids = k.split("__")[1].split("+");
-      for (const id of ids) expect(GARMENTS.some((g) => g.id === id)).toBe(true);
-      expect(existsSync(join(process.cwd(), "public", "looks", `${k}.webp`))).toBe(true);
+    const { CURATED_LOOKS } = await import("../styling/looks.data");
+    expect(CURATED_LOOKS.length).toBe(160);
+    for (const l of CURATED_LOOKS) {
+      for (const id of l.garmentIds) {
+        const g = GARMENTS.find((x) => x.id === id)!;
+        expect(g).toBeDefined();
+        expect(g.lines).toContain(l.gender);
+        expect(g.occasions).toContain(l.occasion);
+      }
+      expect(existsSync(join(process.cwd(), "public", "looks", `${l.image}.webp`))).toBe(true);
     }
   });
 
-  it("여성복·남성복은 해당 성별 모델만, 없으면 모델컷 없이 표시", async () => {
-    const { modelCutSrc, modelGenderFor } = await import("../styling/modelCuts");
-    const { MODEL_CUT_KEYS } = await import("../styling/modelCuts.data");
-    const women = recommendOutfits({ result: null, prefs: { ...basePrefs, line: "women" } });
-    for (const [i, o] of women.entries()) {
-      const m = modelCutSrc(o, "women", i);
-      if (m) expect(m.gender).toBe("women");
-      expect(MODEL_CUT_KEYS.includes(`women__${o.coreKey}`)).toBe(!!m);
+  it.each(lines.flatMap((l) => occasions.map((o) => [l, o] as const)))("%s / %s: 모든 유형 기준에서 3개 이상, 모델컷 포함", async (line, occ) => {
+    const { recommendLooks, lookBodyType } = await import("../styling/recommend");
+    for (const r of ctxs) {
+      const outs = recommendLooks({ result: r, prefs: { ...basePrefs, line, occasions: [occ] } });
+      expect(outs.length).toBeGreaterThanOrEqual(3);
+      for (const o of outs) {
+        expect(o.look).toBeDefined();
+        if (line !== "unisex") expect(o.look!.gender).toBe(line);
+        expect(o.reason.length).toBeGreaterThan(10);
+        expect(o.fitTips.length).toBeGreaterThan(0);
+      }
+      // 첫 번째 룩은 추천 기준과 같은 체형 모델
+      expect(outs[0].look!.bodyType).toBe(lookBodyType(r));
+      expect(new Set(outs.map((o) => o.coreKey)).size).toBe(outs.length);
     }
-    const fake = { coreKey: "no-such+combo", items: women[0].items };
-    expect(modelCutSrc(fake, "men", 0)).toBeNull();
-    // 여성 전용 아이템(스커트)이 있으면 유니섹스에서도 여성 모델
-    const skirt = GARMENTS.find((g) => g.id === "skirt-flare")!;
-    expect(modelGenderFor({ items: [{ garment: skirt, why: "", matched: [] }] }, "unisex", 1)).toBe("women");
+  });
+
+  it("혼합형은 1순위 유형 모델, 판정 보류는 유형 없음 모델", async () => {
+    const { lookBodyType } = await import("../styling/recommend");
+    expect(lookBodyType({ classification: "mixed", primary: "wave", secondary: "natural" })).toBe("wave");
+    expect(lookBodyType({ classification: "inconclusive", primary: "straight", secondary: null })).toBe("neutral");
+    expect(lookBodyType(null)).toBe("neutral");
+  });
+
+  it("제외한 코디는 다시 나오지 않음", async () => {
+    const { recommendLooks } = await import("../styling/recommend");
+    const r = { classification: "wave" as const, primary: "wave" as const, secondary: null };
+    const first = recommendLooks({ result: r, prefs: { ...basePrefs, line: "women" } });
+    const next = recommendLooks({ result: r, prefs: { ...basePrefs, line: "women" }, feedback: { excludedCores: [first[0].coreKey] } });
+    expect(next.map((o) => o.coreKey)).not.toContain(first[0].coreKey);
+    expect(next.length).toBeGreaterThanOrEqual(3);
   });
 });
