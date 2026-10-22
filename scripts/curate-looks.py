@@ -3,6 +3,7 @@
 
 성별 × 체형(스트레이트·웨이브·내추럴·유형 없음) × 상황마다 PER_CELL개의 룩을 고릅니다.
 - 점수: 체형 어울림(affinity) + 취향(taste) 공통점 + 핏 균형
+- 데님: 한 룩에 데님 아이템은 최대 2개 (상의·하의·아우터가 모두 데님인 룩은 만들지 않음)
 - 다양성: 같은 칸 안에서는 상의·하의·원피스·신발을 되도록 겹치지 않게,
   전체적으로는 아이템 사용 횟수에 비례한 감점 + 성별 룩 수의 CAP 비율을 넘으면 큰 감점
 - 모든 칸을 한 개씩 번갈아 고르기 때문에(라운드 로빈) 앞쪽 칸이 인기 아이템을 독점하지 않습니다.
@@ -16,6 +17,7 @@ import re
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 PER_CELL = 8
+MAX_DENIM = 2  # 한 룩에 데님 아이템은 최대 2개 (데님 온 데님 온 데님 방지)
 CAP = 0.15
 GENDERS = ["women", "men"]
 BODIES = ["straight", "wave", "natural", "neutral"]
@@ -39,6 +41,7 @@ def parse():
             "tastes": arr("tastes"),
             "aff": dict(zip(["straight", "wave", "natural"], map(float, aff.groups()))),
             "fit": fit.group(1) if fit else None,
+            "denim": bool(re.search(r'fabric: "[^"]*데님', b)),
         }
     return out
 
@@ -69,7 +72,10 @@ def tastes_of(items):
 def pick_extra(pool, body, gender, core_items, cell_used, repeat_cost):
     core_t = tastes_of(core_items)
     best = None
+    denim = sum(c["denim"] for c in core_items)
     for x in pool:
+        if x["denim"] and denim >= MAX_DENIM:
+            continue
         s = aff(x, body) + 0.35 * len(core_t & set(x["tastes"])) - penalty(gender, x["id"], cell_used, repeat_cost)
         if best is None or s > best[0] or (s == best[0] and x["id"] < best[1]["id"]):
             best = (s, x)
@@ -148,7 +154,7 @@ import type {{ Occasion }} from "./types";
  * 완성 룩 큐레이션 — 성별 × 체형(스트레이트·웨이브·내추럴·유형 없음) × 상황마다 {PER_CELL}개.
  * scripts/curate-looks.py 로 생성합니다 (직접 수정하지 마세요).
  * 체형 어울림·취향 일관성으로 고르되, 같은 칸 안에서는 상의·하의·신발이 겹치지 않게 하고
- * 한 아이템이 같은 성별 룩의 약 {int(CAP * 100)}%를 넘지 않도록 사용 횟수를 제한했습니다.
+ * 한 아이템이 같은 성별 룩의 약 {int(CAP * 100)}%를 넘지 않도록 사용 횟수를 제한했습니다. 한 룩의 데님 아이템은 최대 {MAX_DENIM}개입니다.
  * 각 룩의 아이템 전부(아우터·신발·소품 포함)를 해당 체형 AI 모델이 입은 모델컷이 public/looks/<image>.webp 에 있습니다.
  * 같은 성별·체형에서 아이템 구성이 같은 룩은 이미지를 공유합니다.
  */

@@ -274,6 +274,14 @@ describe("완성 룩 큐레이션", () => {
     for (const g of GARMENTS) expect(used.has(g.id)).toBe(true);
   });
 
+  it("한 룩의 데님 아이템은 최대 2개", async () => {
+    const { CURATED_LOOKS } = await import("../styling/looks.data");
+    for (const l of CURATED_LOOKS) {
+      const denim = l.garmentIds.filter((id) => GARMENTS.find((g) => g.id === id)!.attrs.fabric?.includes("데님"));
+      expect(denim.length, l.id).toBeLessThanOrEqual(2);
+    }
+  });
+
   it("다른 코디 보기: 회차마다 다른 룩을 보여 주고 끝나면 처음으로 돌아감", async () => {
     const { recommendLooks, lookRoundCount } = await import("../styling/recommend");
     const r = { classification: "straight" as const, primary: "straight" as const, secondary: null };

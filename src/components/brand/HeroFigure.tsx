@@ -1,21 +1,22 @@
 /**
- * 랜딩용 추상 일러스트 — 실제 인물 데이터가 아닌 장식용 도식입니다.
- * 윤곽은 관절 좌표(J)에서 직접 만든 캡슐 형태라 관절점과 항상 맞물립니다.
+ * 랜딩용 일러스트 — AI로 만든 얼굴 없는 인체 일러스트(public/brand/hero-figure.webp) 위에
+ * 포즈 추적 HUD(관절점·측정선)를 겹친 장식용 도식입니다. 실제 인물이나 분석 결과가 아닙니다.
+ * 관절 좌표(J)는 일러스트의 관절 위치(뷰박스 320×470 기준)에 맞춰 둔 값입니다.
  */
 const J = {
-  head: [160, 70],
-  ls: [124, 124],
-  rs: [196, 124],
-  le: [112, 198],
-  re: [208, 198],
-  lw: [106, 266],
-  rw: [214, 266],
-  lh: [142, 252],
-  rh: [178, 252],
-  lk: [140, 346],
-  rk: [180, 346],
-  la: [138, 430],
-  ra: [182, 430],
+  head: [160, 47],
+  ls: [124, 100],
+  rs: [196, 100],
+  le: [103, 165],
+  re: [217, 165],
+  lw: [92, 213],
+  rw: [228, 213],
+  lh: [136, 206],
+  rh: [184, 206],
+  lk: [140, 320],
+  rk: [182, 320],
+  la: [124, 410],
+  ra: [194, 410],
 } as const;
 type K = keyof typeof J;
 
@@ -24,33 +25,7 @@ const BONES: Array<[K, K]> = [
   ["lh", "lk"], ["lk", "la"], ["rh", "rk"], ["rk", "ra"],
 ];
 
-/** 신체 부위 캡슐: [시작, 끝, 두께] */
-const LIMBS: Array<[K, K, number]> = [
-  ["ls", "le", 24], ["le", "lw", 18], ["rs", "re", 24], ["re", "rw", 18],
-  ["lh", "lk", 34], ["lk", "la", 25], ["rh", "rk", 34], ["rk", "ra", 25],
-];
-
-/** 몸통: 어깨 바깥 → 허리 → 골반 바깥 */
-const TORSO = "M112 120 Q160 108 208 120 L202 168 Q190 206 194 228 L197 262 L123 262 L126 228 Q130 206 118 168 Z";
-
-function BodyShapes({ grow }: { grow: number }) {
-  const [hx, hy] = J.head;
-  return (
-    <>
-      <ellipse cx={hx} cy={hy} rx={21 + grow / 2} ry={26 + grow / 2} />
-      <rect x={151 - grow / 2} y={88} width={18 + grow} height={34} rx={6} />
-      <path d={TORSO} strokeWidth={grow} strokeLinejoin="round" />
-      {LIMBS.map(([a, b, w]) => (
-        <line key={`${a}-${b}`} x1={J[a][0]} y1={J[a][1]} x2={J[b][0]} y2={J[b][1]} strokeWidth={w + grow} strokeLinecap="round" />
-      ))}
-      {/* 손, 발 */}
-      <circle cx={J.lw[0] - 1} cy={J.lw[1] + 12} r={9 + grow / 2} />
-      <circle cx={J.rw[0] + 1} cy={J.rw[1] + 12} r={9 + grow / 2} />
-      <ellipse cx={J.la[0] - 6} cy={J.la[1] + 10} rx={15 + grow / 2} ry={7 + grow / 2} />
-      <ellipse cx={J.ra[0] + 6} cy={J.ra[1] + 10} rx={15 + grow / 2} ry={7 + grow / 2} />
-    </>
-  );
-}
+const FIGURE_SRC = `${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}/brand/hero-figure.webp`;
 
 export function HeroFigure({ className }: { className?: string }) {
   const sm = [(J.ls[0] + J.rs[0]) / 2, J.ls[1]];
@@ -59,10 +34,6 @@ export function HeroFigure({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 320 470" className={className} role="img" aria-label="전신 포즈 추적 HUD 예시 도식 (실제 인물 아님)">
       <defs>
-        <linearGradient id="hf-bg" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#1B1D22" />
-          <stop offset="1" stopColor="#0E0F12" />
-        </linearGradient>
         <linearGradient id="hf-scan" x1="0" x2="0" y1="0" y2="1">
           <stop offset="0" stopColor="#fff" stopOpacity="0" />
           <stop offset="0.85" stopColor="#fff" stopOpacity="0.08" />
@@ -72,7 +43,7 @@ export function HeroFigure({ className }: { className?: string }) {
           <rect width="320" height="470" rx="28" />
         </clipPath>
       </defs>
-      <rect width="320" height="470" rx="28" fill="url(#hf-bg)" />
+      <rect width="320" height="470" rx="28" fill="#121216" />
 
       {/* 프레이밍 가이드 */}
       <g stroke="#fff" strokeOpacity="0.5" strokeWidth="1.5" fill="none" strokeLinecap="round">
@@ -81,24 +52,19 @@ export function HeroFigure({ className }: { className?: string }) {
       <line x1="40" x2="280" y1="38" y2="38" stroke="#fff" strokeOpacity="0.2" strokeDasharray="3 5" />
       <line x1="40" x2="280" y1="446" y2="446" stroke="#fff" strokeOpacity="0.2" strokeDasharray="3 5" />
 
-      {/* 인체 윤곽: 굵은 외곽 레이어 위에 배경색 레이어를 겹쳐 합집합 외곽선만 남김 */}
-      <g fill="#C9CCD3" stroke="#C9CCD3" opacity="0.6">
-        <BodyShapes grow={3} />
-      </g>
-      <g fill="#1A1C21" stroke="#1A1C21">
-        <BodyShapes grow={0} />
-      </g>
+      {/* 인체 일러스트 (살짝 어둡게 해서 HUD가 잘 보이게) */}
+      <image href={FIGURE_SRC} x="0" y="0" width="320" height="470" preserveAspectRatio="xMidYMid slice" clipPath="url(#hf-clip)" opacity="0.82" />
 
       {/* 측정선 */}
       <g stroke="#fff" strokeDasharray="5 4" strokeWidth="1.2" strokeOpacity="0.9">
-        <line x1="98" x2="222" y1={J.ls[1]} y2={J.rs[1]} />
-        <line x1="116" x2="204" y1={J.lh[1]} y2={J.rh[1]} />
+        <line x1="106" x2="214" y1={J.ls[1]} y2={J.rs[1]} />
+        <line x1="114" x2="206" y1={J.lh[1]} y2={J.rh[1]} />
       </g>
       <g fill="#fff" fontSize="10" fontFamily="ui-sans-serif, system-ui, sans-serif" fontWeight="600">
-        <rect x="230" y={J.ls[1] - 10} width="44" height="20" rx="10" fill="#000" fillOpacity="0.6" />
-        <text x="252" y={J.ls[1] + 4} textAnchor="middle">어깨선</text>
-        <rect x="230" y={J.lh[1] - 10} width="44" height="20" rx="10" fill="#000" fillOpacity="0.6" />
-        <text x="252" y={J.lh[1] + 4} textAnchor="middle">골반선</text>
+        <rect x="244" y={J.ls[1] - 10} width="44" height="20" rx="10" fill="#000" fillOpacity="0.6" />
+        <text x="266" y={J.ls[1] + 4} textAnchor="middle">어깨선</text>
+        <rect x="244" y={J.lh[1] - 10} width="44" height="20" rx="10" fill="#000" fillOpacity="0.6" />
+        <text x="266" y={J.lh[1] + 4} textAnchor="middle">골반선</text>
       </g>
 
       {/* 몸통/다리 눈금자 */}
