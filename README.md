@@ -156,7 +156,7 @@ scripts/copy-mediapipe-wasm.mjs
 
 - **의류 36종:** OpenAI `gpt-image-2`로 만든 상품컷 스타일 이미지입니다. 원본은 `public/garments/<id>.jpg`, 배경을 지운 누끼는 `public/garments/cutout/<id>.webp`에 있습니다.
 - **모델컷:** AI 기준 모델(`scripts/images/ref-{women,men}.jpg`)에 상의+하의(또는 원피스) 조합을 입힌 이미지로, `public/looks/<gender>__<coreKey>.webp`에 있습니다.
-  - 현재 여성 83/83, 남성 14/40이 들어가 있습니다. 모델컷이 없는 조합은 누끼 플랫레이만 보여 줍니다.
+  - 현재 여성 83/83, 남성 40/40이 모두 들어가 있습니다. 모델컷이 없는 조합(새 아이템 추가 시)은 누끼 플랫레이만 보여 줍니다.
   - 빠진 컷은 다음 명령으로 채웁니다. 이미 있는 컷은 건너뜁니다.
 
 ```bash

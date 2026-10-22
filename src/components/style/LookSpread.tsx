@@ -1,21 +1,11 @@
 import { garmentCutoutSrc } from "@/lib/styling/garmentImages.data";
 import { modelCutSrc } from "@/lib/styling/modelCuts";
-import type { Garment, Outfit, Slot, StyleLine } from "@/lib/styling/types";
+import { flatLayLayout, type BoardShape, type Box } from "@/lib/styling/flatLayLayout";
+import type { Garment, Outfit, StyleLine } from "@/lib/styling/types";
 import { cn } from "@/lib/utils";
 import { GarmentIcon } from "./GarmentArt";
 
-/** 플랫레이 보드 위 슬롯별 배치 (%, 보드 기준). 겹쳐 놓아 스타일링 북 느낌을 냄 */
-const BOX: Record<Slot, { l: number; t: number; w: number; h: number; z: number }> = {
-  outer: { l: 44, t: 2, w: 54, h: 52, z: 1 },
-  top: { l: 3, t: 3, w: 56, h: 42, z: 3 },
-  dress: { l: 4, t: 2, w: 58, h: 80, z: 3 },
-  bottom: { l: 30, t: 36, w: 44, h: 60, z: 2 },
-  shoes: { l: 2, t: 68, w: 34, h: 24, z: 4 },
-  accessory: { l: 64, t: 70, w: 33, h: 24, z: 4 },
-};
-
-function Cutout({ garment }: { garment: Garment }) {
-  const b = BOX[garment.slot];
+function Cutout({ garment, box: b }: { garment: Garment; box: Box }) {
   const src = garmentCutoutSrc(garment.id);
   const style = { left: `${b.l}%`, top: `${b.t}%`, width: `${b.w}%`, height: `${b.h}%`, zIndex: b.z };
   return (
@@ -37,15 +27,30 @@ function Cutout({ garment }: { garment: Garment }) {
 }
 
 /** 누끼 아이템을 종이 질감 배경 위에 배치한 플랫레이 */
-export function FlatLayBoard({ garments, className, label }: { garments: Garment[]; className?: string; label: string }) {
+export function FlatLayBoard({
+  garments,
+  className,
+  label,
+  shape = "wide",
+}: {
+  garments: Garment[];
+  className?: string;
+  label: string;
+  shape?: BoardShape;
+}) {
   // 원피스가 있으면 상의·하의 자리는 쓰지 않음
   const hasDress = garments.some((g) => g.slot === "dress");
   const shown = garments.filter((g) => !(hasDress && (g.slot === "top" || g.slot === "bottom")));
+  const layout = flatLayLayout(
+    shown.map((g) => g.slot),
+    shape,
+  );
   return (
     <div role="img" aria-label={label} className={cn("relative overflow-hidden rounded-2xl bg-[#EFE9DF]", className)}>
-      {shown.map((g) => (
-        <Cutout key={g.id} garment={g} />
-      ))}
+      {shown.map((g) => {
+        const box = layout[g.slot];
+        return box ? <Cutout key={g.id} garment={g} box={box} /> : null;
+      })}
     </div>
   );
 }
@@ -75,7 +80,7 @@ export function LookSpread({ outfit, line, index }: { outfit: Outfit; line: Styl
             </figcaption>
           </figure>
         )}
-        <FlatLayBoard garments={garments} className="h-full" label={`${outfit.concept} 코디 플랫레이`} />
+        <FlatLayBoard garments={garments} shape={model ? "tall" : "wide"} className="h-full" label={`${outfit.concept} 코디 플랫레이`} />
       </div>
       <p className="mt-2 px-1 text-[11px] leading-snug text-neutral-500">
         AI 생성 이미지 · 실제 판매 상품이 아니에요
