@@ -1,13 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Eye, ImageOff, Trash2 } from "lucide-react";
 import { Notice } from "@/components/flow/Notice";
+import { AutoRecordToggle } from "@/components/result/AutoRecordToggle";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { CLASSIFICATION_LABEL, STRENGTH_LABEL, TYPE_META } from "@/lib/brand/typeMeta";
 import { describeMixed } from "@/lib/classifier/engine";
 import { OCCASION_LABEL } from "@/lib/styling/recommend";
-import { deleteAllSaved, deleteSaved, useSavedResults, type SavedResult } from "@/lib/store/saved";
+import { deleteAllSaved, deleteSaved, deleteSavedPhotos, openRecordInSession, useSavedResults, type SavedResult } from "@/lib/store/saved";
 import { clearSession, useHydrated, useSession } from "@/lib/store/session";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +25,15 @@ export function SavedView() {
   const saved = useSavedResults();
   const session = useSession();
   const hydrated = useHydrated();
+  const router = useRouter();
+  const [openError, setOpenError] = useState<string | null>(null);
+
+  async function reopen(id: string) {
+    setOpenError(null);
+    if (session.result && !window.confirm("지금 탭의 세션 데이터(사진·결과)를 이 기록으로 바꿔서 열까요?")) return;
+    if (await openRecordInSession(id)) router.push("/result");
+    else setOpenError("이 기록의 상세 데이터를 불러오지 못했어요. 요약만 남아 있는 기록일 수 있어요.");
+  }
 
   if (!hydrated) return <div className="mx-auto h-64 w-full max-w-6xl animate-pulse rounded-3xl bg-surface" />;
 
@@ -59,23 +71,29 @@ export function SavedView() {
       <section aria-labelledby="saved-list">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h2 id="saved-list" className="text-lg font-semibold">
-            저장된 결과 요약 <span className="text-neutral-400">{saved.length}</span>
+            검사 기록 <span className="text-neutral-400">{saved.length}</span>
           </h2>
           {saved.length > 0 && (
             <Button
               variant="ghost"
               className="rounded-full text-red-700 hover:bg-red-50"
               onClick={() => {
-                if (window.confirm("저장된 결과 요약을 모두 삭제할까요? 되돌릴 수 없어요.")) deleteAllSaved();
+                if (window.confirm("검사 기록을 모두 삭제할까요? 되돌릴 수 없어요.")) deleteAllSaved();
               }}
             >
               <Trash2 className="size-4" aria-hidden /> 전체 삭제
             </Button>
           )}
         </div>
+        <AutoRecordToggle className="mt-4 rounded-2xl bg-surface p-4" />
+        {openError && (
+          <Notice tone="error" className="mt-4">
+            {openError}
+          </Notice>
+        )}
         {saved.length === 0 ? (
           <div className="mt-4 space-y-3">
-            <Notice tone="info">저장된 결과가 없어요. 결과 화면에서 저장에 동의하면 여기에 표시돼요.</Notice>
+            <Notice tone="info">아직 검사 기록이 없어요. 검사를 마치면 결과 요약이 여기에 쌓여요.</Notice>
             <Link href="/guide" className={cn(buttonVariants(), "rounded-full")}>분석 시작하기</Link>
           </div>
         ) : (
@@ -105,12 +123,37 @@ export function SavedView() {
                       variant="ghost"
                       size="icon"
                       className="rounded-full"
-                      aria-label="이 결과 삭제"
+                      aria-label="이 기록 삭제"
                       onClick={() => deleteSaved(r.id)}
                     >
                       <Trash2 className="size-4" aria-hidden />
                     </Button>
                   </div>
+                  {r.detail && (
+                    <p className="mt-3 text-xs text-neutral-500">
+                      기록: 결과 요약{r.detail.analysis && " · 관절 좌표·측정값"}
+                      {r.detail.photos.length > 0 && ` · 사진(${r.detail.photos.map((v) => (v === "front" ? "정면" : "측면")).join("·")})`}
+                    </p>
+                  )}
+                  {r.detail && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button size="sm" className="rounded-full" onClick={() => reopen(r.id)}>
+                        <Eye className="size-3.5" aria-hidden /> 결과 다시 보기
+                      </Button>
+                      {r.detail.photos.length > 0 && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full"
+                          onClick={() => {
+                            if (window.confirm("이 기록의 사진만 지울까요? 좌표와 결과 요약은 남아요.")) void deleteSavedPhotos(r.id);
+                          }}
+                        >
+                          <ImageOff className="size-3.5" aria-hidden /> 사진만 삭제
+                        </Button>
+                      )}
+                    </div>
+                  )}
                   {r.highlights.length > 0 && (
                     <details className="mt-4 text-sm">
                       <summary className="cursor-pointer font-medium">근거 요약 보기</summary>

@@ -131,8 +131,8 @@ export default function Home() {
           </div>
           <ul className="grid gap-4 text-sm leading-relaxed text-neutral-600 sm:grid-cols-2 md:col-span-2">
             <li><strong className="block text-ink">기기 안에서만 처리</strong>카메라 영상과 사진은 브라우저 안에서 분석되고 서버로 업로드되지 않아요.</li>
-            <li><strong className="block text-ink">기본은 세션 저장</strong>탭을 닫으면 사진과 분석 데이터가 사라져요. 언제든 직접 지울 수 있어요.</li>
-            <li><strong className="block text-ink">동의한 경우에만 저장</strong>저장을 선택하면 사진·좌표 없이 결과 요약만 이 브라우저에 남겨요.</li>
+            <li><strong className="block text-ink">사진은 기본으로 남기지 않아요</strong>촬영 사진은 탭을 닫으면 사라져요. 기록에 사진을 남기려면 직접 켜야 해요.</li>
+            <li><strong className="block text-ink">기록은 이 기기에만</strong>검사 기록(결과·관절 좌표, 선택 시 사진)은 이 브라우저에만 남고, 언제든 끄거나 지울 수 있어요.</li>
             <li><strong className="block text-ink">다른 사람을 찍을 때</strong>촬영 대상의 동의를 먼저 받아 주세요. 결과 공유도 본인의 동의가 필요해요.</li>
           </ul>
         </div>

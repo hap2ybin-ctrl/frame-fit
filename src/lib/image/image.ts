@@ -29,8 +29,14 @@ function scaledSize(w: number, h: number, maxEdge = MAX_PHOTO_EDGE) {
   return { width: Math.round(w * k), height: Math.round(h * k) };
 }
 
-export function drawToJpeg(source: CanvasImageSource, srcW: number, srcH: number, quality = 0.88): { dataUrl: string; width: number; height: number } {
-  const { width, height } = scaledSize(srcW, srcH);
+export function drawToJpeg(
+  source: CanvasImageSource,
+  srcW: number,
+  srcH: number,
+  quality = 0.88,
+  maxEdge = MAX_PHOTO_EDGE,
+): { dataUrl: string; width: number; height: number } {
+  const { width, height } = scaledSize(srcW, srcH, maxEdge);
   const canvas = document.createElement("canvas");
   canvas.width = width;
   canvas.height = height;

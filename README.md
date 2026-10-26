@@ -81,7 +81,7 @@ src/
    ├─ analysis/               # 특징 계산(features), 사진 분석 파이프라인, 분류 입력 생성, 체형 비율 맵(insights)
    ├─ classifier/             # ★ 판정 엔진(engine) + 규칙 설정(rules.config) + 문항 설정(questions.config)
    ├─ styling/                # ★ 의복 카탈로그 데이터, 스타일 포인트, 핏 조절 가이드, 추천 엔진
-   ├─ store/                  # 분석 데이터: sessionStorage 세션 / 동의 기반 결과 요약 저장
+   ├─ store/                  # 분석 데이터: sessionStorage 세션 / 검사 기록(결과 요약)
    ├─ preferences/            # 취향 데이터: 유형 기준·스타일 선호·옷장·코디북·제외·선호 핏 (분석 데이터와 분리)
    ├─ fitlab/                 # 실루엣 비교 도해 계산 (순수 함수)
    ├─ export/                 # 결과 PNG/PDF
@@ -148,7 +148,7 @@ scripts/copy-mediapipe-wasm.mjs
 | 코디 저장·피드백 | `/style`, `/lookbook` | 코디 저장(책갈피), 코디 제외(다음 추천에서 같은 상의+하의 조합 제외), 아이템 덜 추천, 선호 핏·취향 기록, 코디북 조회, 제외 되돌리기, 초기화 |
 
 **데이터 분리**
-- 분석 데이터(`lib/store/session.ts`, `lib/store/saved.ts`): 사진·좌표·응답·결과. 사진과 좌표는 세션에만 있습니다.
+- 분석 데이터(`lib/store/session.ts`, `lib/store/saved.ts`, `lib/store/recordDetail.ts`): 사진·좌표·응답·결과. 진행 중인 검사는 세션에, 검사 기록은 이 브라우저(localStorage·IndexedDB)에 있습니다.
 - 취향 데이터(`lib/preferences`): 유형 기준, 스타일 선호, 옷장 체크, 코디북, 제외, 덜 추천, 선호 핏. 기본은 이 탭(sessionStorage)이고, '취향·코디북을 이 기기에 저장'을 켜면 localStorage(`framefit:prefs:v1`)에 보관합니다. 사진·좌표는 들어가지 않습니다.
 - '분석 결과 사용' 기준은 현재 세션 결과 → 저장한 최근 결과 요약 → 없음(선호 조건만) 순서로 정해집니다.
 
@@ -179,7 +179,11 @@ set -a && . ./.env.local && set +a && python3 scripts/images/generate-garments.p
 
 - 영상, 사진, 좌표를 서버로 전송하지 않습니다. 네트워크 요청은 WASM·모델 파일 다운로드뿐입니다.
 - 세션 데이터(사진, 좌표, 응답, 결과)는 `sessionStorage`에 있으며, 탭을 닫으면 사라집니다.
-- 저장은 사용자가 동의한 경우에만 `localStorage`에 하며, 사진·좌표는 빼고 결과 요약만 남깁니다. 개별 삭제와 전체 삭제를 지원합니다.
+- 검사 기록: 검사를 마치면 자동으로 남깁니다(결과 화면·'내 결과'에서 끌 수 있음, `framefit:autorecord:v1`).
+  - 결과 요약(유형·점수·근거 요약·스타일 선호): `localStorage`(`framefit:saved:v1`, 최근 50개)
+  - 관절 좌표·측정값·자가 체크 응답·전체 판정: IndexedDB(`framefit-records`). '결과 다시 보기'로 지난 검사를 결과 화면에서 다시 열 수 있습니다.
+  - 사진: '사진도 함께 기록'을 켠 경우에만(기본 꺼짐, `framefit:recordphotos:v1`) 긴 변 960px JPEG로 줄여 IndexedDB에 보관합니다. 사진만 따로 지울 수 있습니다.
+  - 영상은 기록하지 않습니다. 개별·전체 삭제 시 상세 데이터도 함께 지웁니다.
 - `Permissions-Policy: camera=(self)` 헤더를 사용합니다. 로그인은 없습니다.
 - 모델을 자체 호스팅하려면 아래 환경 변수를 설정하세요.
 
@@ -199,7 +203,7 @@ NEXT_PUBLIC_POSE_MODEL_FULL_URL=/models/pose_landmarker_full.task
 - 실제 모델 결과 기반의 비율 계산, 관찰 가능한 항목과 관찰 불가 항목 분리, 분석 진행 상태 시각화
 - 8문항 자가 체크와 규칙 엔진(혼합형·판정 보류 포함), 근거 아코디언
 - 데이터 기반 코디 3개 이상, 상황·실루엣·부위·취향 필터, 옷장 조합, 유형별 스타일 포인트 8항목
-- 동의 기반 로컬 저장·삭제, PNG/PDF 내보내기, Web Share(지원 브라우저)
+- 검사 기록 자동 저장(좌표 포함, 사진 선택)·다시 보기·삭제, PNG/PDF 내보내기, Web Share(지원 브라우저)
 - 결과 이미지에 분석 사진(관절·측정선·윤곽 합성본) 포함은 선택 사항이며 기본 꺼짐, 선택 시 신체 사진 포함 경고 표시
 
 ### 미구현 (향후 계획) — 앱 안에서 작동하는 것처럼 표시하지 않음

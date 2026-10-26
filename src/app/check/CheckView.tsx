@@ -9,6 +9,8 @@ import { buildClassifierInput } from "@/lib/analysis/buildInput";
 import { classify } from "@/lib/classifier/engine";
 import { QUESTIONS, UNKNOWN_OPTION_ID } from "@/lib/classifier/questions.config";
 import { DECISION } from "@/lib/classifier/rules.config";
+import { usePreferences } from "@/lib/preferences/store";
+import { autoRecordSession } from "@/lib/store/saved";
 import { updateSession, useHydrated, useSession } from "@/lib/store/session";
 import { cn } from "@/lib/utils";
 
@@ -16,6 +18,7 @@ export function CheckView() {
   const session = useSession();
   const hydrated = useHydrated();
   const router = useRouter();
+  const pref = usePreferences();
   const [index, setIndex] = useState(0);
 
   const total = QUESTIONS.length;
@@ -44,7 +47,10 @@ export function CheckView() {
       fittedClothing: session.fittedClothing,
     });
     const result = classify(input);
-    updateSession((s) => ({ ...s, result, resultAt: new Date().toISOString() }));
+    const resultAt = new Date().toISOString();
+    updateSession((s) => ({ ...s, result, resultAt }));
+    // 검사 기록: 결과 요약 + 좌표·응답 (사진은 '사진도 함께 기록'을 켠 경우만). 자동 기록을 끈 경우 건너뜀
+    autoRecordSession({ ...session, result, resultAt }, pref.style, pref.closet);
     router.push("/result");
   }
 

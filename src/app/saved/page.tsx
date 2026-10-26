@@ -9,8 +9,8 @@ export default function SavedPage() {
     <>
       <PageHeader
         eyebrow="MY RESULTS"
-        title="저장된 결과와 데이터 관리"
-        description="동의하고 저장한 결과 요약은 이 브라우저에만 있어요. 사진·영상·관절 좌표는 저장하지 않아요."
+        title="검사 기록과 데이터 관리"
+        description="검사를 마칠 때마다 결과 요약과 관절 좌표·측정값이 이 브라우저에만 기록돼요. 사진은 켠 경우에만 남고, 영상은 기록하지 않아요."
       />
       <SavedView />
     </>

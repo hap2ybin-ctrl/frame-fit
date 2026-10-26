@@ -8,7 +8,7 @@ import type { CaptureView } from "../pose/quality";
 
 /**
  * 분석 세션 상태 — sessionStorage(탭을 닫으면 삭제)에만 보관합니다.
- * 사진·좌표는 절대 서버로 전송하지 않으며, localStorage에도 저장하지 않습니다.
+ * 사진·좌표는 절대 서버로 전송하지 않습니다. 검사 기록(lib/store/saved.ts)은 이 브라우저에만 따로 남습니다.
  * 스타일 취향·옷장·코디북은 별도 모듈(lib/preferences)에서 관리합니다.
  */
 export interface SessionState {

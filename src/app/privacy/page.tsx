@@ -8,7 +8,9 @@ const ROWS = [
   { what: "촬영·업로드 사진", where: "sessionStorage (이 탭)", keep: "탭을 닫거나 직접 지울 때까지", sent: "전송 안 함" },
   { what: "관절 좌표·측정 비율", where: "sessionStorage (이 탭)", keep: "탭을 닫거나 직접 지울 때까지", sent: "전송 안 함" },
   { what: "자가 체크 응답·결과", where: "sessionStorage (이 탭)", keep: "탭을 닫거나 직접 지울 때까지", sent: "전송 안 함" },
-  { what: "저장한 결과 요약", where: "localStorage (이 브라우저)", keep: "동의 후 저장, '내 결과'에서 삭제", sent: "전송 안 함" },
+  { what: "검사 기록 — 결과 요약", where: "localStorage (이 브라우저)", keep: "검사 완료 시 자동 기록(끌 수 있음), 최근 50개, '내 결과'에서 삭제", sent: "전송 안 함" },
+  { what: "검사 기록 — 관절 좌표·측정값·응답", where: "IndexedDB (이 브라우저)", keep: "결과 요약과 함께 기록·삭제", sent: "전송 안 함" },
+  { what: "검사 기록 — 사진 (선택)", where: "IndexedDB (이 브라우저)", keep: "'사진도 함께 기록'을 켠 경우만, 긴 변 960px로 축소. 사진만 따로 삭제 가능", sent: "전송 안 함" },
 ];
 
 export default function PrivacyPage() {

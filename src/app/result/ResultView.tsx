@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Download, FileText, RotateCcw, Save, Share2, Trash2 } from "lucide-react";
+import { ArrowRight, Download, FileText, History, RotateCcw, Save, Share2, Trash2 } from "lucide-react";
 import { QualityBadge } from "@/components/camera/QualityPanel";
 import { Notice } from "@/components/flow/Notice";
+import { AutoRecordToggle } from "@/components/result/AutoRecordToggle";
 import { BodyInsightMap } from "@/components/result/BodyInsightMap";
 import { EvidenceAccordion, ScoreBars, TypeHero } from "@/components/result/ResultParts";
 import { Button, buttonVariants } from "@/components/ui/button";
@@ -14,7 +15,7 @@ import { composeAnalysisPhoto, type AnalysisPhoto } from "@/lib/export/analysisI
 import { pngToPdf, renderResultPng } from "@/lib/export/resultImage";
 import { downloadBlob } from "@/lib/image/image";
 import { usePreferences } from "@/lib/preferences/store";
-import { saveResult, toSavedResult } from "@/lib/store/saved";
+import { deleteSaved, recordIdFor, recordSession, useSavedResults } from "@/lib/store/saved";
 import { clearSession, useHydrated, useSession } from "@/lib/store/session";
 import { cn } from "@/lib/utils";
 
@@ -27,8 +28,7 @@ export function ResultView() {
   const session = useSession();
   const prefs = usePreferences();
   const hydrated = useHydrated();
-  const [consent, setConsent] = useState(false);
-  const [saved, setSaved] = useState<string | null>(null);
+  const savedList = useSavedResults();
   const [busy, setBusy] = useState<"png" | "pdf" | "share" | null>(null);
   const [msg, setMsg] = useState<{ tone: "ok" | "error"; text: string } | null>(null);
   // 분석 사진 포함은 매번 사용자가 직접 선택 (기본 꺼짐)
@@ -41,7 +41,7 @@ export function ResultView() {
     return (
       <div className="mx-auto mt-10 w-full max-w-3xl space-y-4 px-5 sm:px-8">
         <Notice tone="info" title="아직 결과가 없어요">
-          보완 체크를 마치면 결과가 계산돼요. 결과는 이 탭의 세션에만 보관되며 탭을 닫으면 사라져요.
+          보완 체크를 마치면 결과가 계산되고 '내 결과'에 기록돼요. 지난 검사는 '내 결과'에서 다시 볼 수 있어요.
         </Notice>
         <div className="flex flex-wrap gap-2">
           <Link href="/check" className={cn(buttonVariants(), "rounded-full")}>보완 체크로 이동</Link>
@@ -50,6 +50,11 @@ export function ResultView() {
       </div>
     );
   }
+
+  // 이 검사 결과의 기록 여부 (자동 기록 또는 직접 기록)
+  const recordId = recordIdFor(session.resultAt ?? "session");
+  const recordEntry = savedList.find((r) => r.id === recordId);
+  const recorded = !!recordEntry;
 
   const front = session.analyses.front;
   const side = session.analyses.side;
@@ -114,10 +119,8 @@ export function ResultView() {
   }
   function save() {
     try {
-      const entry = toSavedResult(result!, prefs.style, prefs.closet, crypto.randomUUID(), new Date().toISOString());
-      saveResult(entry);
-      setSaved(entry.id);
-      setMsg({ tone: "ok", text: "이 브라우저에 결과 요약을 저장했어요. '내 결과'에서 확인·삭제할 수 있어요." });
+      recordSession(session, prefs.style, prefs.closet);
+      setMsg({ tone: "ok", text: "이 브라우저에 검사 기록을 남겼어요. '내 결과'에서 확인·삭제할 수 있어요." });
     } catch (e) {
       setMsg({ tone: "error", text: (e as Error).message });
     }
@@ -187,16 +190,42 @@ export function ResultView() {
 
           <section className="space-y-4 rounded-3xl bg-surface p-6" aria-labelledby="save">
             <h2 id="save" className="font-semibold">저장과 공유</h2>
-            <p className="text-sm leading-relaxed text-neutral-600">
-              지금 결과는 이 탭의 세션에만 있어요. 저장하면 사진·좌표 없이 유형·근거 요약·스타일 선호만 이 브라우저(localStorage)에 남아요.
-            </p>
-            <Label className="items-start gap-3 font-normal leading-relaxed">
-              <Checkbox checked={consent} onCheckedChange={(v) => setConsent(!!v)} className="mt-0.5" />
-              <span className="text-sm">결과 요약을 이 기기의 브라우저에 저장하는 데 동의해요.</span>
-            </Label>
-            <Button className="w-full rounded-full" disabled={!consent || !!saved} onClick={save}>
-              <Save className="size-4" aria-hidden /> {saved ? "저장됨" : "결과 요약 저장"}
-            </Button>
+            {recorded ? (
+              <>
+                <p className="flex items-start gap-2 text-sm leading-relaxed text-neutral-700">
+                  <History className="mt-0.5 size-4 shrink-0" aria-hidden />
+                  <span>
+                    이 검사 결과는 &lsquo;내 결과&rsquo;에 기록됐어요. 유형·근거 요약·관절 좌표·측정값
+                    {recordEntry?.detail?.photos.length ? "·사진" : ""}이 이 브라우저에만 남아요.
+                  </span>
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  <Link href="/saved" className={cn(buttonVariants({ variant: "outline" }), "rounded-full")}>
+                    기록 보기
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    className="rounded-full text-red-700 hover:bg-red-50"
+                    onClick={() => {
+                      deleteSaved(recordId);
+                      setMsg({ tone: "ok", text: "이 결과의 기록을 지웠어요. 지금 결과는 탭을 닫기 전까지 볼 수 있어요." });
+                    }}
+                  >
+                    <Trash2 className="size-4" aria-hidden /> 기록 삭제
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="text-sm leading-relaxed text-neutral-600">
+                  이 결과는 아직 기록되지 않았어요. 기록하면 유형·근거 요약·관절 좌표·측정값(사진은 설정한 경우만)이 이 브라우저에만 남아요.
+                </p>
+                <Button className="w-full rounded-full" onClick={save}>
+                  <Save className="size-4" aria-hidden /> 결과 요약 기록
+                </Button>
+              </>
+            )}
+            <AutoRecordToggle className="border-t border-black/5 pt-4" />
             {photoSources.length > 0 && (
               <Label className="items-start gap-3 border-t border-black/5 pt-4 font-normal leading-relaxed">
                 <Checkbox checked={includePhotos} onCheckedChange={(v) => setIncludePhotos(!!v)} className="mt-0.5" />
