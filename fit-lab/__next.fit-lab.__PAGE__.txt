@@ -1,0 +1,31 @@
+2:"$Sreact.fragment"
+3:"/frame-fit/_next/static/chunks/27gjg8e11zukd.js"
+4:I[39756,["$3"],"default"]
+5:I[37457,["$3"],"default"]
+a:"/frame-fit/_next/static/chunks/31vb3old-z453.js"
+b:"/frame-fit/_next/static/chunks/1bnwts3u5vzqy.js"
+c:"/frame-fit/_next/static/chunks/0ivrd6zw5j3ra.js"
+d:"/frame-fit/_next/static/chunks/2eu0k955195z3.js"
+e:I[95663,["$3","$a","$b","$c","$d"],"PageHeader"]
+f:"$Sreact.suspense"
+10:I[18561,["$3","$a","$b","$c","$d"],"FitLabView"]
+11:I[97367,["$3"],"OutletBoundary"]
+14:"ViewportBoundary"
+15:I[97367,["$3"],"$14"]
+16:"MetadataBoundary"
+17:I[97367,["$3"],"$16"]
+18:I[27201,["$3"],"IconMark"]
+7:X
+7:C
+8:X
+9:[["children",{"s":"__PAGE__","h":160,"d":{"r":["$","$2","c",{"children":[[["$","$Le",null,{"eyebrow":"FIT LAB","title":"슬림·레귤러·오버핏 실루엣 비교","description":"상의 길이, 허리선, 하의 형태를 바꾸면서 핏에 따라 실루엣이 어떻게 달라지는지 비교해 보세요."}],["$","$f",null,{"fallback":["$","div",null,{"className":"mx-auto h-96 w-full max-w-6xl animate-pulse rounded-3xl bg-surface"}],"children":["$","$L10",null,{}]}]],[["$","script","script-0",{"src":"/frame-fit/_next/static/chunks/31vb3old-z453.js","async":true}],["$","script","script-1",{"src":"/frame-fit/_next/static/chunks/1bnwts3u5vzqy.js","async":true}],["$","script","script-2",{"src":"/frame-fit/_next/static/chunks/0ivrd6zw5j3ra.js","async":true}],["$","script","script-3",{"src":"/frame-fit/_next/static/chunks/2eu0k955195z3.js","async":true}]],["$","$L11",null,{"children":["$","$f",null,{"name":"Next.MetadataOutlet","children":"$@12"}]}]]}],"p":"$@13","v":null,"s":"$8"}}]]
+1:[["children",{"s":"fit-lab","h":64,"d":{"r":["$","$2","c",{"children":[null,["$","$L4",null,{"parallelRouterKey":"children","template":["$","$L5",null,{}]}]]}],"p":"$@6","v":"$7","s":"$8"},"c":"$Q9"}]]
+0:{"t":{"t":{"s":"","h":16,"c":"$Q1"},"h":{"r":["$","$2","h",{"children":[null,["$","$L15",null,{"children":[["$","meta","0",{"charSet":"utf-8"}],["$","meta","1",{"name":"viewport","content":"width=device-width, initial-scale=1, viewport-fit=cover"}],["$","meta","2",{"name":"theme-color","content":"#ffffff"}],["$","meta","3",{"name":"color-scheme","content":"light"}]]}],["$","$L17",null,{"children":[["$","div",null,{"hidden":true,"children":["$","$f",null,{"name":"Next.Metadata","children":[["$","title","0",{"children":"실루엣 비교 · FRAME FIT"}],["$","meta","1",{"name":"description","content":"브라우저 안에서 전신 포즈를 추적해 신체 비율과 실루엣을 시각화하고, 자가 체크와 함께 골격 유형 경향과 맞춤 코디를 제안하는 참고용 스타일링 도구입니다."}],["$","meta","2",{"name":"robots","content":"index, follow"}],["$","link","3",{"rel":"icon","href":"/frame-fit/favicon.ico?favicon.117ezoe8m31dk.ico","sizes":"48x48","type":"image/x-icon"}],["$","$L18","4",{}]]}]}],null]}],["$","meta",null,{"name":"next-size-adjust","content":""}]]}],"p":"$@19","v":null,"s":"$8"}},"a":"$@1a","u":"$@1b","b":"JI0riLHhpkcYy5PyXS7Vl"}
+12:null
+1b:true
+8:300
+8:C
+1a:0
+6:"$undefined"
+19:"$undefined"
+13:"$undefined"
