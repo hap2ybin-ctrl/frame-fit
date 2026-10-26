@@ -46,7 +46,7 @@ export interface PreferenceState {
 export const DEFAULT_PREFERENCES: PreferenceState = {
   version: 1,
   persist: false,
-  style: { line: "unisex", occasions: ["casual"], goals: [], focus: [], tastes: [] },
+  style: { line: "unisex", occasions: ["casual"], goals: [], focus: [], tastes: [], personalColor: null },
   typeMode: "auto",
   mixedPair: ["straight", "wave"],
   closet: [],

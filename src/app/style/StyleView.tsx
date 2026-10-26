@@ -8,6 +8,7 @@ import { ChipGroup } from "@/components/style/ChipGroup";
 import { GarmentVisual } from "@/components/style/GarmentArt";
 import { OutfitCard, type OutfitActions } from "@/components/style/OutfitCard";
 import { PersistToggle } from "@/components/style/PersistToggle";
+import { StyleBrief } from "@/components/style/StyleBrief";
 import { TypePicker } from "@/components/style/TypePicker";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,6 +29,7 @@ import {
   resolveTypeContext,
   stylePointsFor,
 } from "@/lib/styling/recommend";
+import { PERSONAL_COLOR, PERSONAL_COLOR_ORDER, type PersonalColor } from "@/lib/styling/personalColor";
 import type { FocusArea, Occasion, Outfit, SilhouetteGoal, StyleLine, StylePreferences, Taste } from "@/lib/styling/types";
 import { useSavedResults } from "@/lib/store/saved";
 import { useHydrated, useSession } from "@/lib/store/session";
@@ -38,6 +40,10 @@ const LINE_OPTIONS: Array<{ value: StyleLine; label: string }> = [
   { value: "women", label: "여성복" },
   { value: "men", label: "남성복" },
   { value: "unisex", label: "유니섹스" },
+];
+const PC_OPTIONS: Array<{ value: PersonalColor | "unknown"; label: string }> = [
+  ...PERSONAL_COLOR_ORDER.map((v) => ({ value: v, label: PERSONAL_COLOR[v].label })),
+  { value: "unknown", label: "모름" },
 ];
 
 export function StyleView() {
@@ -115,6 +121,13 @@ export function StyleView() {
         <ChipGroup<Taste> label="취향" options={opts(TASTE_LABEL)} value={prefs.tastes} onChange={(v) => setPrefs({ tastes: v })} />
         <ChipGroup<SilhouetteGoal> label="원하는 효과" options={opts(GOAL_LABEL)} value={prefs.goals} onChange={(v) => setPrefs({ goals: v })} />
         <ChipGroup<FocusArea> label="강조하고 싶은 부위 (선택)" options={opts(FOCUS_LABEL)} value={prefs.focus} onChange={(v) => setPrefs({ focus: v })} />
+        <ChipGroup<PersonalColor | "unknown">
+          label="퍼스널 컬러 (알고 있다면)"
+          options={PC_OPTIONS}
+          value={[prefs.personalColor ?? "unknown"]}
+          multiple={false}
+          onChange={([v]) => setPrefs({ personalColor: v === "unknown" ? null : v })}
+        />
         <div className="space-y-1 text-sm">
           <p className="font-semibold">선호 핏</p>
           <p className="text-neutral-600">
@@ -137,6 +150,13 @@ export function StyleView() {
           </Link>
         </div>
       </div>
+
+      <StyleBrief
+        type={cardType}
+        secondary={result?.classification === "mixed" ? result.secondary : null}
+        typeLabel={ctx.label}
+        personalColor={prefs.personalColor ?? null}
+      />
 
       <Tabs defaultValue="outfits" className="mt-10">
         <TabsList className="h-11! w-full rounded-full p-1 sm:w-fit">
@@ -163,7 +183,7 @@ export function StyleView() {
               )}
               <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 {outfits.map((o, i) => (
-                  <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} />
+                  <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} personalColor={prefs.personalColor ?? null} />
                 ))}
               </div>
               {roundCount > 1 && (
@@ -235,7 +255,7 @@ export function StyleView() {
           ) : (
             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {closetRec.outfits.map((o, i) => (
-                <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} />
+                <OutfitCard key={o.id} outfit={o} type={cardType} index={i} actions={actionsFor(o)} personalColor={prefs.personalColor ?? null} />
               ))}
             </div>
           )}

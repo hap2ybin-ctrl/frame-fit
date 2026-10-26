@@ -64,6 +64,7 @@ export function LookbookView() {
                     onToggleSave: () => updatePreferences((st) => removeSavedOutfit(st, lookbookKey(snap), nowIso())),
                     fitLabHref: fitLabHrefForOutfit(outfit!),
                   }}
+                  personalColor={pref.style.personalColor ?? null}
                 />
               </div>
             ))}

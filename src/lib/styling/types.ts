@@ -1,4 +1,5 @@
 import type { BodyType, TypeScores } from "../classifier/types";
+import type { PersonalColor } from "./personalColor";
 
 export type StyleLine = "women" | "men" | "unisex";
 /** casual=일상, business=출근, date=데이트, formal=행사, travel=여행 */
@@ -86,6 +87,8 @@ export interface StylePreferences {
   goals: SilhouetteGoal[];
   focus: FocusArea[];
   tastes: Taste[];
+  /** 사용자가 알고 있는 퍼스널 컬러 (모르면 null) */
+  personalColor?: PersonalColor | null;
 }
 
 /** 코디 추천의 유형 기준 */

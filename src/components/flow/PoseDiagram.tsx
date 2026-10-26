@@ -1,25 +1,28 @@
-/** 정면/측면 자세 안내 도식 (자체 제작 SVG) */
+import { cn } from "@/lib/utils";
+
+const SRC = {
+  front: "/brand/guide-front.webp",
+  side: "/brand/guide-side.webp",
+} as const;
+
+/**
+ * 정면/측면 자세 예시 — AI로 만든 얼굴 없는 인체 이미지(실제 인물 아님)에
+ * 머리끝·발끝 프레이밍 가이드선을 겹쳐 보여 줍니다.
+ */
 export function PoseDiagram({ view, className }: { view: "front" | "side"; className?: string }) {
   return (
-    <svg viewBox="0 0 120 200" className={className} role="img" aria-label={view === "front" ? "정면 자세 예시 도식" : "측면 자세 예시 도식"}>
-      <rect x="1" y="1" width="118" height="198" rx="16" fill="#F6F6F4" />
-      <g fill="none" stroke="#121316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        {view === "front" ? (
-          <>
-            <circle cx="60" cy="30" r="10" />
-            <path d="M42 50h36M42 50l-6 34-2 26M78 50l6 34 2 26M46 50l2 46h24l2-46M50 96l-2 44 0 40M70 96l2 44 0 40" />
-          </>
-        ) : (
-          <>
-            <circle cx="60" cy="30" r="10" />
-            <path d="M60 42v6M54 50c-4 10-4 30 0 46h12c4-16 4-36 0-46zM60 52l2 30 0 26M56 96l-1 44 1 40M64 96l1 44-1 40M57 180h10" />
-          </>
-        )}
-      </g>
-      <g stroke="#121316" strokeOpacity="0.35" strokeDasharray="3 3">
-        <line x1="10" x2="110" y1="14" y2="14" />
-        <line x1="10" x2="110" y1="188" y2="188" />
-      </g>
-    </svg>
+    <div className={cn("relative overflow-hidden rounded-2xl bg-[#F3F2EF] ring-1 ring-black/5", className)}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- 정적 배포(GitHub Pages)에서 이미지 최적화 서버를 쓰지 않음 */}
+      <img
+        src={`${process.env.NEXT_PUBLIC_BASE_PATH ?? ""}${SRC[view]}`}
+        alt={view === "front" ? "정면 자세 예시: 정면을 보고 팔을 몸에서 살짝 띄운 채 곧게 선 모습" : "측면 자세 예시: 옆으로 서서 팔을 몸 옆에 자연스럽게 내린 모습"}
+        width={480}
+        height={720}
+        loading="lazy"
+        className="block h-auto w-full"
+      />
+      <div aria-hidden className="pointer-events-none absolute inset-x-3 top-[5%] border-t border-dashed border-ink/30" />
+      <div aria-hidden className="pointer-events-none absolute inset-x-3 bottom-[8%] border-t border-dashed border-ink/30" />
+    </div>
   );
 }

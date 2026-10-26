@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Bookmark, BookmarkCheck, Ruler, Sparkles, ThumbsDown, X } from "lucide-react";
+import { Bookmark, BookmarkCheck, Palette, Ruler, Sparkles, ThumbsDown, X } from "lucide-react";
 import type { BodyType } from "@/lib/classifier/types";
 import { TYPE_META } from "@/lib/brand/typeMeta";
+import { PERSONAL_COLOR, outfitColorNote, type PersonalColor } from "@/lib/styling/personalColor";
 import { OCCASION_LABEL } from "@/lib/styling/recommend";
 import type { GarmentAttrs, Outfit } from "@/lib/styling/types";
 import { cn } from "@/lib/utils";
@@ -33,13 +34,22 @@ export function OutfitCard({
   type,
   index,
   actions = {},
+  personalColor = null,
 }: {
   outfit: Outfit;
   type: BodyType | null;
   index: number;
   actions?: OutfitActions;
+  /** 사용자가 고른 퍼스널 컬러 (있으면 컬러 메모 표시) */
+  personalColor?: PersonalColor | null;
 }) {
   const meta = type ? TYPE_META[type] : null;
+  const colorNote = personalColor
+    ? outfitColorNote(
+        outfit.items.map(({ garment: g }) => ({ name: g.name, color: g.color, slot: g.slot })),
+        personalColor,
+      )
+    : null;
   return (
     <article className="flex flex-col overflow-hidden rounded-[1.75rem] ring-1 ring-black/5">
       <div className={cn("px-4 pb-4 pt-3", meta ? meta.bgSoft : "bg-surface")}>
@@ -97,6 +107,34 @@ export function OutfitCard({
           </p>
           <p className="pl-6 text-neutral-600">노리는 효과 · {outfit.effect}</p>
         </div>
+
+        {colorNote && personalColor && (
+          <div className="text-sm leading-relaxed">
+            <p className="flex items-center gap-2 font-semibold">
+              <Palette className="size-4" aria-hidden /> {PERSONAL_COLOR[personalColor].label} 컬러 메모
+            </p>
+            <ul className="mt-2 space-y-1.5 text-neutral-700">
+              {colorNote.good.length > 0 && (
+                <li className="flex gap-2">
+                  <span aria-hidden className="mt-2 size-1 shrink-0 rounded-full bg-neutral-400" />
+                  잘 맞는 컬러: {colorNote.good.join(", ")}
+                </li>
+              )}
+              {colorNote.caution.map((c) => (
+                <li key={c.name} className="flex gap-2">
+                  <span aria-hidden className="mt-2 size-1 shrink-0 rounded-full bg-neutral-400" />
+                  <span>
+                    {c.name}: {c.tip}
+                  </span>
+                </li>
+              ))}
+              <li className="flex gap-2">
+                <span aria-hidden className="mt-2 size-1 shrink-0 rounded-full bg-neutral-400" />
+                {colorNote.accessory}
+              </li>
+            </ul>
+          </div>
+        )}
 
         {outfit.fitTips.length > 0 && (
           <div className="text-sm leading-relaxed">

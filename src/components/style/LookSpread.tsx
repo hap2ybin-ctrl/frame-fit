@@ -3,7 +3,7 @@ import { flatLayLayout, type BoardShape, type Box } from "@/lib/styling/flatLayL
 import { TYPE_META } from "@/lib/brand/typeMeta";
 import type { Garment, Outfit } from "@/lib/styling/types";
 import { cn } from "@/lib/utils";
-import { GarmentIcon } from "./GarmentArt";
+import { GarmentPlaceholder } from "./GarmentArt";
 
 function Cutout({ garment, box: b }: { garment: Garment; box: Box }) {
   const src = garmentCutoutSrc(garment.id);
@@ -20,7 +20,7 @@ function Cutout({ garment, box: b }: { garment: Garment; box: Box }) {
           className="h-full w-full object-contain drop-shadow-[0_6px_8px_rgba(60,45,30,0.18)]"
         />
       ) : (
-        <GarmentIcon garment={garment} className="h-full w-full" />
+        <GarmentPlaceholder garment={garment} className="h-full w-full rounded-xl" />
       )}
     </div>
   );

@@ -3,7 +3,7 @@
  * 모든 이미지는 OpenAI 이미지 모델(gpt-image-2)로 생성한 상품컷 스타일 이미지이며, 실제 판매 상품이 아닙니다.
  * 사람·브랜드 로고·텍스트가 없는지 확인한 뒤 사용했습니다.
  * 누끼(배경 제거)본은 public/garments/cutout/<id>.webp 에 있습니다.
- * 목록에 없는 아이템은 자체 제작 SVG 일러스트로 표시합니다.
+ * 목록에 없는 아이템은 그림 없이 색상 칩 타일로 표시합니다.
  */
 export interface GarmentImage {
   file: string;

@@ -3,6 +3,7 @@ import { BODY_TYPES, type BodyType, type Classification, type TypeScores } from 
 import { FIT_TIPS, GOAL_TIPS } from "./fitGuide.data";
 import { GARMENTS } from "./garments.data";
 import { CURATED_LOOKS, type CuratedLook } from "./looks.data";
+import { COLOR_FIT_SCORE, FACE_PROXIMITY, PERSONAL_COLOR, colorMatch, isPersonalColor } from "./personalColor";
 import { NEUTRAL_POINTS, STYLE_POINTS } from "./stylePoints.data";
 import type {
   FitClass,
@@ -62,6 +63,7 @@ export function normalizePrefs(p: Partial<StylePreferences> | undefined): StyleP
     goals: pick(p?.goals, GOAL_LABEL),
     focus: pick(p?.focus, FOCUS_LABEL),
     tastes: pick(p?.tastes, TASTE_LABEL),
+    personalColor: isPersonalColor(p?.personalColor) ? p.personalColor : null,
   };
 }
 
@@ -76,6 +78,8 @@ export const RECOMMEND_WEIGHTS = {
   reusePenalty: 2.5,
   /** 선호 핏으로 기록한 핏의 아이템 가산 */
   fitPreference: 0.5,
+  /** 퍼스널 컬러: 잘 맞음 +, 주의 − (얼굴과 가까운 아이템일수록 크게) */
+  personalColor: 0.8,
   /** "덜 추천"으로 표시한 아이템 감점 */
   dislikedPenalty: 3,
   accessoryMin: 1.6,
@@ -155,6 +159,11 @@ export function scoreGarment(g: Garment, weights: TypeScores, prefs: StylePrefer
   if (feedback.fitPreference && g.fitClass === feedback.fitPreference) {
     score += RECOMMEND_WEIGHTS.fitPreference;
     matched.push(`선호 ${FIT_LABEL[feedback.fitPreference]}`);
+  }
+  if (prefs.personalColor) {
+    const m = colorMatch(g.color, prefs.personalColor);
+    score += RECOMMEND_WEIGHTS.personalColor * COLOR_FIT_SCORE[m.fit] * FACE_PROXIMITY[g.slot];
+    if (m.fit === "good") matched.push(`${PERSONAL_COLOR[prefs.personalColor].label} 컬러`);
   }
   if (feedback.dislikedGarments?.includes(g.id)) score -= RECOMMEND_WEIGHTS.dislikedPenalty;
   return { garment: g, score: Math.round(score * 100) / 100, matched };

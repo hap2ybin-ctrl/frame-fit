@@ -41,7 +41,7 @@ export function ResultView() {
     return (
       <div className="mx-auto mt-10 w-full max-w-3xl space-y-4 px-5 sm:px-8">
         <Notice tone="info" title="아직 결과가 없어요">
-          보완 체크를 마치면 결과가 계산되고 '내 결과'에 기록돼요. 지난 검사는 '내 결과'에서 다시 볼 수 있어요.
+          보완 체크를 마치면 결과가 계산되고 &lsquo;내 결과&rsquo;에 기록돼요. 지난 검사는 &lsquo;내 결과&rsquo;에서 다시 볼 수 있어요.
         </Notice>
         <div className="flex flex-wrap gap-2">
           <Link href="/check" className={cn(buttonVariants(), "rounded-full")}>보완 체크로 이동</Link>
